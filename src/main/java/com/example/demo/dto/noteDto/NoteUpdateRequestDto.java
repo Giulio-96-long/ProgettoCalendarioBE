@@ -5,16 +5,21 @@ import java.time.LocalDateTime;
 public class NoteUpdateRequestDto {
 
 	private long id;
-	
+
 	private String title;
-	
-	private String description;	
-	
+
+	private String description;
+
 	private boolean isImportant;
-	
-	private LocalDateTime eventDate;	
-	
-	public NoteUpdateRequestDto() {}
+
+	private LocalDateTime eventDate;
+
+	private String color;
+
+	private String customMessage;
+
+	public NoteUpdateRequestDto() {
+	}
 
 	public long getId() {
 		return id;
@@ -54,5 +59,21 @@ public class NoteUpdateRequestDto {
 
 	public void setEventDate(LocalDateTime eventDate) {
 		this.eventDate = eventDate;
-	}	
+	}
+
+	public String getColor() {
+		return color;
+	}
+
+	public void setColor(String color) {
+		this.color = color;
+	}
+
+	public String getCustomMessage() {
+		return customMessage;
+	}
+
+	public void setCustomMessage(String customMessage) {
+		this.customMessage = customMessage;
+	}
 }

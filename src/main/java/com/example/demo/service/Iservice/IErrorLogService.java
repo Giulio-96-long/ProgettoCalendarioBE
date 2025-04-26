@@ -6,7 +6,7 @@ import com.example.demo.dto.logErrorDto.LogErrorResposeDto;
 
 public interface IErrorLogService {
 	
-	void logError(String endpoint, Exception e);
-	
 	List<LogErrorResposeDto> getAllError();
+
+	void logError(String request, Exception e);
 }

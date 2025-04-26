@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.demo.dto.fileDto.FileRequestDto;
-import com.example.demo.dto.fileDto.FileResponseDto;
 
 public class NewNoteRequestDto {
 	

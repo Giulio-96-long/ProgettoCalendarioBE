@@ -12,28 +12,27 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "ErrorLog")
 public class ErrorLog {
-	
-	  @Id
-	  @GeneratedValue(strategy = GenerationType.IDENTITY)
-	  private Long id;
 
-	  @Column(name = "endpoint")
-	  private String endpoint;
-	  
-	  @Column(name = "error_message", length = 5000)	  
-	  private String errorMessage;
-	  
-	  @Column(name = "stack_trace", length = 5000)
-	  private String stackTrace;
-	  
-	  @Column(name = "user")
-	  private String user;
-	  
-	  private LocalDateTime timestamp;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-	  public ErrorLog() {
-	      this.timestamp = LocalDateTime.now();
-	  }
+	@Column(name = "endpoint")
+	private String endpoint;
+
+	@Column(name = "error_message", length = 5000)
+	private String errorMessage;
+
+	@Column(name = "stack_trace", length = 5000)
+	private String stackTrace;
+
+	@Column(name = "user")
+	private String user;
+
+	private LocalDateTime timestamp;
+
+	public ErrorLog() {
+	}
 
 	public Long getId() {
 		return id;
@@ -78,6 +77,5 @@ public class ErrorLog {
 	public void setTimestamp(LocalDateTime timestamp) {
 		this.timestamp = timestamp;
 	}
-	  
-	  
+
 }

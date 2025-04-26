@@ -28,7 +28,7 @@ public class AuthUtils {
 	    public Long getLoggedUserId() {
 	        String email = getLoggedUserEmail();
 	        if (email != null) {
-	            User user = userRepository.findByEmail(email).orElse(null);
+	        	User user = getLoggedUser();
 	            return user != null ? user.getId() : null;
 	        }
 	        return null;
@@ -36,6 +36,9 @@ public class AuthUtils {
 
 	    public User getLoggedUser() {
 	        String email = getLoggedUserEmail();
-	        return email != null ? userRepository.findByEmail(email).orElse(null) : null;
+	        if (email == null) {
+	            return null;
+	        }
+	        return userRepository.findByEmail(email);
 	    }
 }

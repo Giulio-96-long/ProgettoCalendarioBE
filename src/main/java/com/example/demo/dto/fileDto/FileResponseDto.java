@@ -1,12 +1,34 @@
 package com.example.demo.dto.fileDto;
 
+import com.example.demo.entity.Attachment;
+
 public class FileResponseDto {
-	   private long id;
-	   private String nome;
-	   private String path;
-	   private String base64;
-	   
-	   public FileResponseDto(){}
+	
+	private long id;
+	
+	private String nome;
+	
+	private String path;
+	
+	private String base64;
+
+	public FileResponseDto() {
+	}
+	
+	
+	public FileResponseDto(long id, String nome, String path, String base64) {		
+		this.id = id;
+		this.nome = nome;
+		this.path = path;
+		this.base64 = base64;
+	}
+
+	public FileResponseDto(Attachment attachment) {
+        this.id = attachment.getId();
+        this.nome = attachment.getNome();
+        this.path = attachment.getPath();
+        this.base64 = attachment.getBase64(); 
+    }
 
 	public long getId() {
 		return id;
@@ -39,6 +61,5 @@ public class FileResponseDto {
 	public void setBase64(String base64) {
 		this.base64 = base64;
 	}
-	   
-	   
+
 }

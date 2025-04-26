@@ -1,7 +1,5 @@
 package com.example.demo.service;
 
-import java.util.Optional;
-
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,8 +28,8 @@ public class UserService implements IUserService {
 
     @Override
     public long newUser(UserRequestDto userRequestDto) {
-        Optional<User> existingUser = userRepository.findByEmail(userRequestDto.getEmail());
-        if (existingUser.isPresent())
+        User existingUser = userRepository.findByEmail(userRequestDto.getEmail());
+        if (existingUser != null)
             return 0;
         User newUser = new User();
         newUser.setUsername(userRequestDto.getUsername());
@@ -48,9 +46,8 @@ public class UserService implements IUserService {
     
     @Override
     public long GetIdUser(String email) {
-    	 User user = userRepository.findByEmail(email)
-    		        .orElseThrow(() -> new UsernameNotFoundException("Utente non trovato con email: " + email));
-    		    return user.getId();
+    	 User user = userRepository.findByEmail(email);
+    	 return user.getId();
     }
     
     @Override
@@ -65,4 +62,31 @@ public class UserService implements IUserService {
         return null;
     }
     
+    @Override
+    public boolean changePassword(String currentPassword, String newPassword) {
+        String email = getCurrentUserEmail();
+        if (email == null) return false;
+
+        User user = userRepository.findByEmail(email);           
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return false; 
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        return true;
+    }
+
+	@Override
+	public boolean removeUser(Long userId) {
+		userRepository.deleteById(userId);
+		return false;
+	}
+
+	@Override
+	public User findByEmail(String email) {
+		return userRepository.findByEmail(email);		
+	}
+
 }

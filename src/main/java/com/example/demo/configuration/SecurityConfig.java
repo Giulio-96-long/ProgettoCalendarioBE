@@ -44,8 +44,10 @@ public class SecurityConfig {
                 "/register",
                 "/login",
                 "/api/user/register",
-                "/api/auth/login"
+                "/api/user/login"                
             ).permitAll()
+            .requestMatchers("/api/admin/**").hasRole("ADMIN")
+            .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .anyRequest().authenticated()
             )
@@ -70,7 +72,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://127.0.0.1:5500")); // Origine frontend
+        config.setAllowedOrigins(List.of("http://127.0.0.1:5501")); // Origine frontend
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Permette invio cookie/Authorization header

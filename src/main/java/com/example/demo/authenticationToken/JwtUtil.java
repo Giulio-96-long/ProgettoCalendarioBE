@@ -27,7 +27,7 @@ public class JwtUtil {
         this.jwtSecret = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-	   public String generateToken(String email) {
+	   public String generateToken(String email, String role) {
 
 	        // Usa Instant per ottenere il timestamp corrente
 	        Instant now = Instant.now();
@@ -42,6 +42,7 @@ public class JwtUtil {
 	        // Costruisci il token JWT
 	        var token = Jwts.builder()
 	                .setSubject(email)
+	                .claim("role", role)
 	                .setIssuedAt(issuedAt)
 	                .setExpiration(expirationDate)
 	                .signWith(jwtSecret)
@@ -73,5 +74,15 @@ public class JwtUtil {
         } catch (JwtException e) {
             return false;                     // Se il parsing fallisce, il token non è valido
         }
+    }
+    
+    public String extractRole(String token) {
+        Claims claims = Jwts.parserBuilder()
+            .setSigningKey(jwtSecret)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+
+        return claims.get("role", String.class);
     }
 }

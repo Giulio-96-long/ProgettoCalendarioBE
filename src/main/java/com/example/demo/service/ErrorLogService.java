@@ -2,14 +2,18 @@ package com.example.demo.service;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.ErrorLogRepository;
 import com.example.demo.service.Iservice.IErrorLogService;
 import com.example.demo.util.AuthUtils;
+
 import com.example.demo.dto.logErrorDto.LogErrorResposeDto;
 import com.example.demo.entity.ErrorLog;
 
@@ -17,16 +21,16 @@ import com.example.demo.entity.ErrorLog;
 public class ErrorLogService implements IErrorLogService {
 	
 	private final ErrorLogRepository errorLogRepository;
-	private final AuthUtils authUtils;
+	
 	
     public ErrorLogService(ErrorLogRepository errorLogRepository, AuthUtils authUtils) {
-        this.errorLogRepository = errorLogRepository;
-		this.authUtils = authUtils;
+        this.errorLogRepository = errorLogRepository;	
     }
 
     @Override
     public void logError(String endpoint, Exception e) {
-        ErrorLog log = new ErrorLog();
+    	ErrorLog log = new ErrorLog();    	
+        
         log.setEndpoint(endpoint);             
         // Troncamento messaggio errore
         String errorMessage = e.getMessage().length() > 5000 ? e.getMessage().substring(0, 4990) + "..." : e.getMessage();
@@ -40,7 +44,15 @@ public class ErrorLogService implements IErrorLogService {
             ? fullStackTrace.substring(0, 4990) + "..."
             : fullStackTrace;
         log.setStackTrace(truncatedStackTrace);
-        log.setUser(authUtils.getLoggedUser().getEmail());
+      
+        log.setTimestamp(LocalDateTime.now());
+        String user = "Anonymous"; 
+        // Se l'utente è autenticato, prendi il suo nome
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            user = authentication.getName();  
+        }
+        log.setUser(user);
         errorLogRepository.save(log);
     }
     

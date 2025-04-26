@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 
+import org.springframework.security.core.GrantedAuthority;
+
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
@@ -22,10 +24,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        
-         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+         User user = userRepository.findByEmail(email);
+         
+         List<GrantedAuthority> authorities = List.of(
+        	        new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase()) // es: ROLE_ADMIN
+        	    );
          
         return new org.springframework.security.core.userdetails.User(
             user.getEmail(),

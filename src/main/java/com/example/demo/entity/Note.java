@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -34,11 +35,8 @@ public class Note {
 	private LocalDateTime dateCreation;
 	
 	@Column(nullable = true)
-	private LocalDateTime dateModification;	
+	private LocalDateTime dateModification;		
 	
-	@Column(nullable = true)
-	private LocalDateTime eventDate ;	
-
 	@Column(nullable = true)
 	private boolean isImportant = false;
 	
@@ -49,8 +47,25 @@ public class Note {
 	@OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Attachment> files = new ArrayList<>();	
 	
+	@OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<ChangeHistory> changeHistoryList;
+	
+	@OneToOne(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
+	private PersonalizedNote personalizedNote;
+	
+	 @ManyToOne
+	 @JoinColumn(name = "date_note_id", nullable = false)
+	 private DateNote dateNote;
+	
+    public DateNote getDateNote() {
+		return dateNote;
+	}
 
-    public Note() {}
+	public void setDateNote(DateNote dateNote) {
+		this.dateNote = dateNote;
+	}
+
+	public Note() {}
 
     @PrePersist
     protected void onCreate() {
@@ -113,13 +128,6 @@ public class Note {
 		this.user = user;
 	}
 	
-	public LocalDateTime getEventDate() {
-	    return eventDate;
-	}
-
-	public void setEventDate(LocalDateTime eventDate) {
-	    this.eventDate = eventDate;
-	}
 
 	public LocalDateTime getDateCreation() {
 		return dateCreation;
@@ -144,6 +152,23 @@ public class Note {
 	public void setFiles(List<Attachment> files) {
 		this.files = files;
 	}
+
+	public List<ChangeHistory> getChangeHistoryList() {
+		return changeHistoryList;
+	}
+
+	public void setChangeHistoryList(List<ChangeHistory> changeHistoryList) {
+		this.changeHistoryList = changeHistoryList;
+	}
+
+	public PersonalizedNote getPersonalizedNote() {
+		return personalizedNote;
+	}
+
+	public void setPersonalizedNote(PersonalizedNote personalizedNote) {
+		this.personalizedNote = personalizedNote;
+	}
+
 
 	
 }
