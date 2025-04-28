@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
@@ -344,5 +345,70 @@ public class NoteService implements INoteService {
 		noteRepository.delete(note);
 		return true;
 	}
+	
+	@Override
+	public boolean hasImportantNotesThisWeek() {
+		Long userId = authUtils.getLoggedUserId();
+		
+		 // Ottieni la data di oggi
+	    LocalDate today = LocalDate.now();
+	    
+	    // Ottieni il primo giorno del mese corrente
+	    LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+	    
+	    // Ottieni l'ultimo giorno del mese corrente
+	    LocalDate lastDayOfMonth = today.withDayOfMonth(1).plusMonths(1).minusDays(1);
+
+	    // Convertili in LocalDateTime (per includere anche l'ora)
+	    LocalDateTime startDateTime = firstDayOfMonth.atStartOfDay();  // Primo giorno, inizio del giorno (00:00)
+	    LocalDateTime endDateTime = lastDayOfMonth.atTime(23, 59, 59); // Ultimo giorno, fine del giorno (23:59:59)
+
+	    // Query che cerca note importanti per l'utente tra startOfWeek e endOfWeek
+	    List<Note> importantNotes = noteRepository.findByUserIdAndDateBetween(userId, startDateTime, endDateTime);
+	    
+	    return !importantNotes.isEmpty();
+	}
+	
+	@Override
+	public List<NoteResponseDto> getArchivedNotesByMonth(int month) {
+	    Long userId = authUtils.getLoggedUserId();
+	    LocalDate now = LocalDate.now();
+	    int year = now.getYear();
+
+	    List<DateNote> dateNotes = dateNoteRepository.findArchivedNotesByMonthAndYear(userId, month, year);
+
+	    List<NoteResponseDto> noteResponseDtos = new ArrayList<>();
+
+	    for (DateNote dateNote : dateNotes) {
+	        List<NoteWithFilesDto> notesDto = new ArrayList<>();
+
+	        for (Note note : dateNote.getNotes()) {
+	            if (!note.isArchived()) {
+	                continue; // Sicurezza extra: ignora le non archiviate anche se non dovrebbe servire
+	            }
+
+	            List<FileResponseDto> fileDtos = new ArrayList<>();
+
+	            for (Attachment file : note.getFiles()) {
+	                fileDtos.add(new FileResponseDto(file.getId(), file.getNome(), file.getPath(), file.getBase64()));
+	            }
+
+	            PersonalizedNoteResponseDto personalizedDto = null;
+	            if (note.getPersonalizedNote() != null) {
+	                personalizedDto = new PersonalizedNoteResponseDto(note.getPersonalizedNote());
+	            }
+
+	            notesDto.add(new NoteWithFilesDto(note.getId(), note.getTitle(), note.getDescription(),
+	                    note.isImportant(), personalizedDto, fileDtos));
+	        }
+
+	        if (!notesDto.isEmpty()) {
+	            noteResponseDtos.add(new NoteResponseDto(dateNote.getId(), dateNote.getEventDate(), notesDto));
+	        }
+	    }
+
+	    return noteResponseDtos;
+	}
+
 
 }

@@ -40,6 +40,9 @@ public class Note {
 	@Column(nullable = true)
 	private boolean isImportant = false;
 	
+	@Column(nullable = false)
+	private boolean archived = false; 
+	
 	@ManyToOne
 	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
@@ -48,7 +51,7 @@ public class Note {
 	private List<Attachment> files = new ArrayList<>();	
 	
 	@OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<ChangeHistory> changeHistoryList;
+	private List<ChangeHistory> changeHistoryList = new ArrayList<>();
 	
 	@OneToOne(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
 	private PersonalizedNote personalizedNote;
@@ -169,6 +172,13 @@ public class Note {
 		this.personalizedNote = personalizedNote;
 	}
 
+	public boolean isArchived() {
+		return archived;
+	}
+
+	public void setArchived(boolean archived) {
+		this.archived = archived;
+	}
 
 	
 }

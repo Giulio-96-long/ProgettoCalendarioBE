@@ -25,4 +25,16 @@ public interface DateNoteRepository extends JpaRepository<DateNote, Long> {
          @Param("startDate") LocalDateTime startDate,
          @Param("endDate") LocalDateTime endDate
      );
+    
+    @Query("SELECT DISTINCT d FROM DateNote d " +
+    	       "JOIN d.notes n " +
+    	       "WHERE n.user.id = :userId " +
+    	       "AND n.archived = true " +
+    	       "AND YEAR(d.eventDate) = :year " +
+    	       "AND (:month = 0 OR MONTH(d.eventDate) = :month)")
+    	List<DateNote> findArchivedNotesByMonthAndYear(
+    	    @Param("userId") Long userId,
+    	    @Param("month") int month,
+    	    @Param("year") int year
+    	);
 }

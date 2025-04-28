@@ -119,4 +119,26 @@ public class NoteController {
 
 	}
 
+	@GetMapping("/getImportantNotes")
+	public ResponseEntity<?> getNotifications() {
+		try {
+			var response = noteService.hasImportantNotesThisWeek();
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			errorLogService.logError("note/getImportantNotes", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+		}
+
+	}
+	@GetMapping("/archived")
+	public ResponseEntity<?> getArchivedNotesByMonth(@RequestParam int month) {
+	    try {
+	    	var notes = noteService.getArchivedNotesByMonth(month);
+		    return ResponseEntity.ok(notes);
+		} catch (Exception e) {
+			errorLogService.logError("note/archived", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+		}	
+	}
+	
 }

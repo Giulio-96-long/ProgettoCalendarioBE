@@ -25,4 +25,8 @@ public interface INoteService {
 	List<NoteResponseDto> getNotesForMonth(int position);
 
 	List<NoteResponseDto> getNotesByMonth(int month);
+	
+	boolean hasImportantNotesThisWeek();
+
+	List<NoteResponseDto> getArchivedNotesByMonth(int month);
 }
