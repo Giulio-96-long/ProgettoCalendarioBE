@@ -14,7 +14,6 @@ public class ConvertToFileBase64{
 	    Attachment file = new Attachment();
 	    file.setNome(multipartFile.getOriginalFilename());
 	    file.setBase64(Base64.getEncoder().encodeToString(multipartFile.getBytes()));
-	    file.setPath(pathFile);
 	    file.setNote(note);
 	    return file;
 	}

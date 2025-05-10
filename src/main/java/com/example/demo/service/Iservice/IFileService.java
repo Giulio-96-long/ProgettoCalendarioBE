@@ -15,4 +15,6 @@ public interface IFileService {
 
 	List<FileResponseDto> getFilesByNoteId(Long noteId);
 	
+	FileResponseDto getFileById(Long idFile);
+	
 }

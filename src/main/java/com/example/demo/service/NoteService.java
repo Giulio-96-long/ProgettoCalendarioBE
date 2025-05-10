@@ -1,14 +1,11 @@
 package com.example.demo.service;
 
-import java.time.DayOfWeek;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -16,7 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.PersonalizedNoteDto.PersonalizedNoteResponseDto;
 import com.example.demo.dto.fileDto.FileResponseDto;
-import com.example.demo.dto.noteDto.NoteResponseDto;
+import com.example.demo.dto.noteDto.DateNoteSummaryDto;
+import com.example.demo.dto.noteDto.NoteSummaryDto;
 import com.example.demo.dto.noteDto.NoteUpdateRequestDto;
 import com.example.demo.dto.noteDto.NoteWithFilesDto;
 import com.example.demo.entity.Attachment;
@@ -59,18 +57,28 @@ public class NoteService implements INoteService {
 	}
 
 	@Override
-	public boolean newNote(String title, String description, boolean isImportant, String color, String message,
-			LocalDateTime dateNote, MultipartFile[] files, String pathFile) throws java.io.IOException {
+	public long newNote(String title, String description, boolean isImportant, String color, String message,
+			Long dateNoteId, LocalDateTime dateNote, MultipartFile[] files, String pathFile)
+			throws java.io.IOException {
 
 		User user = authUtils.getLoggedUser();
 		if (user == null) {
 			throw new RuntimeException("User not authenticated");
 		}
-		// Crea la DateNote
-		DateNote newDateNote = new DateNote();
-		newDateNote.setEventDate(dateNote);
-
-		dateNoteRepository.save(newDateNote);
+		DateNote dn;
+		if (dateNoteId != null) {
+			// usa quello esistente
+			dn = dateNoteRepository.findById(dateNoteId)
+					.orElseThrow(() -> new EntityNotFoundException("DateNote non trovato"));
+		} else {
+			// crea uno nuovo con la data passata
+			if (dateNote == null) {
+				throw new IllegalArgumentException("Devi passare dateNote o dateNoteId");
+			}
+			dn = new DateNote();
+			dn.setEventDate(dateNote);
+			dateNoteRepository.save(dn);
+		}
 
 		// Crea la Note e associa la DateNote
 		Note newNote = new Note();
@@ -78,8 +86,8 @@ public class NoteService implements INoteService {
 		newNote.setTitle(title);
 		newNote.setDescription(description);
 		newNote.setImportant(isImportant);
-		newNote.setDateNote(newDateNote);
-		newDateNote.addNote(newNote);
+		newNote.setDateNote(dn);
+		dn.getNotes().add(newNote);
 
 		if (StringUtils.hasText(color) && StringUtils.hasText(message)) {
 			PersonalizedNote personalizedNote = new PersonalizedNote();
@@ -98,317 +106,279 @@ public class NoteService implements INoteService {
 					fileEntities.add(fileEntity);
 				} catch (Exception e) {
 					errorLogService.logError("note/searchByMonth", e);
-				}							
+				}
 			}
 			newNote.setFiles(fileEntities);
 		}
 
 		noteRepository.save(newNote);
 
-		changeHistoryService.saveChange("Note", newNote, "CREATE", null, newNote.toString(), user, null);
+		changeHistoryService.saveChange(newNote, "CREATE", user, LocalDateTime.now());
 
-		return true;
-	}
-
-	@Override 
-	 public List<NoteResponseDto> getAllNote() 
-	 { 
-		 Long userId = authUtils.getLoggedUserId();
-		 
-		 LocalDateTime startDate = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-		 LocalDateTime endDate= LocalDateTime.now().with(TemporalAdjusters.lastDayOfMonth())
-		        .withHour(23).withMinute(59).withSecond(59).withNano(999999999);
-
-		 List<DateNote> dateNotes = dateNoteRepository.findByUserIdAndDateRange(userId, startDate, endDate);
-
-	        // Mappa le DateNote in NoteResponseDto
-	        List<NoteResponseDto> result = new ArrayList<>();
-
-	        for (DateNote dateNote : dateNotes) {
-	            NoteResponseDto noteResponseDto = new NoteResponseDto();
-	            noteResponseDto.setIdEvent(dateNote.getId());
-	            noteResponseDto.setEventDate(dateNote.getEventDate());
-
-	            // Mappa le Note in NoteWithFilesDto
-	            List<NoteWithFilesDto> noteWithFilesDtos = dateNote.getNotes().stream()
-	                .map(note -> {
-	                    // Mappa la Note in NoteWithFilesDto
-	                    NoteWithFilesDto noteWithFilesDto = new NoteWithFilesDto(
-	                            note.getId(), 
-	                            note.getTitle(), 
-	                            note.getDescription(),
-	                            note.isImportant(), 
-	                            note.getPersonalizedNote() != null 
-	                                ? new PersonalizedNoteResponseDto(note.getPersonalizedNote()) 
-	                                : null, 
-	                            note.getFiles().stream().map(FileResponseDto::new).collect(Collectors.toList())
-	                    );
-	                    return noteWithFilesDto;
-	                })
-	                .collect(Collectors.toList());
-
-	            noteResponseDto.setNotes(noteWithFilesDtos);
-	            result.add(noteResponseDto);
-	        }
-
-	        return result;
-	 }
-
-	@Override
-	public List<NoteResponseDto> getNotesByMonth(int month) {
-	    Long userId = authUtils.getLoggedUserId();
-	    LocalDate now = LocalDate.now();
-	    LocalDate targetMonth = LocalDate.of(now.getYear(), month, 1);
-
-	    LocalDateTime start = targetMonth.atStartOfDay();
-	    LocalDateTime end = targetMonth.withDayOfMonth(targetMonth.lengthOfMonth()).atTime(23, 59, 59);
-
-	    List<DateNote> dateNotes = dateNoteRepository.findByUserIdAndDateRange(userId, start, end);
-
-	    List<NoteResponseDto> noteResponseDtos = new ArrayList<>();
-
-	    for (DateNote dateNote : dateNotes) {
-	        List<NoteWithFilesDto> notesDto = new ArrayList<>();
-
-	        for (Note note : dateNote.getNotes()) {
-	            List<FileResponseDto> fileDtos = new ArrayList<>();
-
-	            for (Attachment file : note.getFiles()) {
-	                fileDtos.add(new FileResponseDto(file.getId(), file.getNome(), file.getPath(), file.getBase64()));
-	            }
-
-	            PersonalizedNoteResponseDto personalizedDto = null;
-	            if (note.getPersonalizedNote() != null) {
-	                personalizedDto = new PersonalizedNoteResponseDto(note.getPersonalizedNote());
-	            }
-
-	            notesDto.add(new NoteWithFilesDto(note.getId(), note.getTitle(), note.getDescription(),
-	                    note.isImportant(), personalizedDto, fileDtos));
-	        }
-
-	        noteResponseDtos.add(new NoteResponseDto(dateNote.getId(), dateNote.getEventDate(), notesDto));
-	    }
-
-	    return noteResponseDtos;
+		return dn.getId();
 	}
 
 	@Override
-	public List<NoteResponseDto> getNotesForMonth(int position) {
-	    Long userId = authUtils.getLoggedUserId();
-	    LocalDate now = LocalDate.now();
-	    LocalDate targetMonth = now.plusMonths(position);
+	public List<DateNoteSummaryDto> getNotesByMonth(int month, int year, String order) {
+		Long userId = authUtils.getLoggedUserId();
+		if (userId == null)
+			throw new RuntimeException("Utente non autenticato");
 
-	    LocalDateTime start = targetMonth.withDayOfMonth(1).atStartOfDay();
-	    LocalDateTime end = targetMonth.withDayOfMonth(targetMonth.lengthOfMonth()).atTime(23, 59, 59);
+		if (month == 0)
+			month = LocalDate.now().getMonthValue();
+		if (year == 0)
+			year = LocalDate.now().getYear();
 
-	    List<DateNote> dateNotes = dateNoteRepository.findByUserIdAndDateRange(userId, start, end);
+		LocalDate firstOfMonth = LocalDate.of(year, month, 1);
+		LocalDateTime start = firstOfMonth.atStartOfDay();
+		LocalDateTime end = firstOfMonth.withDayOfMonth(firstOfMonth.lengthOfMonth()).atTime(23, 59, 59);
 
-	    List<NoteResponseDto> noteResponseDtos = new ArrayList<>();
+		List<DateNote> days = dateNoteRepository.findWithNotesAndPersonalized(userId, start, end);
 
-	    for (DateNote dateNote : dateNotes) {
-	        List<NoteWithFilesDto> notesDto = new ArrayList<>();
-
-	        for (Note note : dateNote.getNotes()) {
-	            List<FileResponseDto> fileDtos = new ArrayList<>();
-
-	            for (Attachment file : note.getFiles()) {
-	                fileDtos.add(new FileResponseDto(file.getId(), file.getNome(), file.getPath(), file.getBase64()));
-	            }
-
-	            PersonalizedNoteResponseDto personalizedDto = null;
-	            if (note.getPersonalizedNote() != null) {
-	                personalizedDto = new PersonalizedNoteResponseDto(note.getPersonalizedNote());
-	            }
-
-	            notesDto.add(new NoteWithFilesDto(note.getId(), note.getTitle(), note.getDescription(),
-	                    note.isImportant(), personalizedDto, fileDtos));
-	        }
-
-	        noteResponseDtos.add(new NoteResponseDto(dateNote.getId(), dateNote.getEventDate(), notesDto));
-	    }
-
-	    return noteResponseDtos;
+		List<DateNoteSummaryDto> result = new ArrayList<>();
+		for (DateNote dn : days) {
+			List<NoteSummaryDto> notesDto = new ArrayList<>();
+			for (Note n : dn.getNotes()) {
+				String color = null;
+				if (n.getPersonalizedNote() != null) {
+					color = n.getPersonalizedNote().getColor();
+				}
+				notesDto.add(new NoteSummaryDto(n.getTitle(), n.isImportant(), color));
+			}
+			result.add(new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
+		}
+		return result;
 	}
 
+	@Override
+	public List<DateNoteSummaryDto> getNotesForMonth(int position, String order) {
+		Long userId = authUtils.getLoggedUserId();
+		if (userId == null)
+			throw new RuntimeException("Utente non autenticato");
+
+		LocalDate target = LocalDate.now().plusMonths(position);
+		LocalDateTime start = target.withDayOfMonth(1).atStartOfDay();
+		LocalDateTime end = target.withDayOfMonth(target.lengthOfMonth()).atTime(23, 59, 59);
+
+		List<DateNote> days = dateNoteRepository.findWithNotesAndPersonalized(userId, start, end);
+
+		List<DateNoteSummaryDto> result = new ArrayList<>();
+		for (DateNote dn : days) {
+			List<NoteSummaryDto> notesDto = new ArrayList<>();
+			for (Note n : dn.getNotes()) {
+				String color = null;
+				if (n.getPersonalizedNote() != null) {
+					color = n.getPersonalizedNote().getColor();
+				}
+				notesDto.add(new NoteSummaryDto(n.getTitle(), n.isImportant(), color));
+			}
+			result.add(new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
+		}
+		return result;
+	}
 
 	@Override
 	public NoteWithFilesDto getNoteById(long id) {
-	    Note note = noteRepository.findNoteWithFilesById(id);
+		Note note = noteRepository.findNoteWithFilesById(id);
 
-	    if (note == null) {
-	        throw new EntityNotFoundException("Nota non trovata con id: " + id);
-	    }
+		if (note == null) {
+			throw new EntityNotFoundException("Nota non trovata con id: " + id);
+		}
 
-	    List<FileResponseDto> fileDtos = new ArrayList<>();
-	    for (Attachment file : note.getFiles()) {
-	        fileDtos.add(new FileResponseDto(file.getId(), file.getNome(), file.getPath(), file.getBase64()));
-	    }
+		List<FileResponseDto> fileDtos = new ArrayList<>();
+		for (Attachment file : note.getFiles()) {
+			fileDtos.add(new FileResponseDto(file.getId(), file.getNome(), file.getBase64()));
+		}
 
-	    PersonalizedNoteResponseDto personalizedDto = null;
-	    if (note.getPersonalizedNote() != null) {
-	        personalizedDto = new PersonalizedNoteResponseDto(note.getPersonalizedNote());
-	    }
+		PersonalizedNoteResponseDto personalizedDto = null;
+		if (note.getPersonalizedNote() != null) {
+			personalizedDto = new PersonalizedNoteResponseDto(note.getPersonalizedNote());
+		}
 
-	    return new NoteWithFilesDto(
-	            note.getId(),
-	            note.getTitle(),
-	            note.getDescription(),
-	            note.isImportant(),
-	            personalizedDto,
-	            fileDtos
-	    );
+		return new NoteWithFilesDto(note.getId(), note.getTitle(), note.getDescription(), note.isImportant(),
+				personalizedDto, fileDtos);
 	}
-
 
 	@Override
 	@Transactional
-	public boolean updateNote(NoteUpdateRequestDto noteUpdateRequestDto) {
-	    Optional<Note> optionalNote = noteRepository.findById(noteUpdateRequestDto.getId());
+	public boolean updateNote(NoteUpdateRequestDto dto) {
+	    // 1) Carica la nota
+	    Note note = noteRepository.findById(dto.getIdDateNote())
+	        .orElseThrow(() -> new EntityNotFoundException("Nota non trovata"));
 
-	    if (optionalNote.isEmpty()) {
-	        return false;
-	    }
-
-	    Note note = optionalNote.get();
-
-	    User userId = authUtils.getLoggedUser();
-	    
-	    if (note.getUser().getId() != userId.getId()) {
+	    // 2) Controllo autorizzazione
+	    User current = authUtils.getLoggedUser();
+	    if (note.getUser() == null) {
 	        throw new AccessDeniedException("Non puoi modificare questa nota");
 	    }
 
-	    // Aggiornamento campi principali
-	    if (noteUpdateRequestDto.getTitle() != null) {
-	        note.setTitle(noteUpdateRequestDto.getTitle());
+	    // 3) Campi base
+	    if (dto.getTitle() != null) {
+	        note.setTitle(dto.getTitle());
 	    }
-	    if (noteUpdateRequestDto.getDescription() != null) {
-	        note.setDescription(noteUpdateRequestDto.getDescription());
+	    if (dto.getDescription() != null) {
+	        note.setDescription(dto.getDescription());
 	    }
-	    note.setImportant(noteUpdateRequestDto.isImportant());
+	    if (dto.getIsImportant() != null) {
+	        note.setImportant(dto.getIsImportant());
+	    }	   
 	    note.setDateModification(LocalDateTime.now());
 
-	    // Aggiornamento della personalized note se presente
-	    if (note.getPersonalizedNote() != null) {
-	        PersonalizedNote personalized = note.getPersonalizedNote();
-
-	        if (noteUpdateRequestDto.getColor() != null) {
-	            personalized.setColor(noteUpdateRequestDto.getColor());
-	        }
-	        if (noteUpdateRequestDto.getCustomMessage() != null) {
-	            personalized.setCustomMessage(noteUpdateRequestDto.getCustomMessage());
-	        }
+	    // 4) PersonalizedNote: create or update
+	    PersonalizedNote p = note.getPersonalizedNote();
+	    if (p == null) {
+	        // prima non c’era: lo creiamo
+	        p = new PersonalizedNote();
+	        p.setNote(note);
+	        note.setPersonalizedNote(p);
+	    }
+	    if (dto.getColor() != null) {
+	        p.setColor(dto.getColor());
+	    }
+	    if (dto.getCustomMessage() != null) {
+	        p.setCustomMessage(dto.getCustomMessage());
 	    }
 
+		// — allegati
+		if (dto.getFiles() != null && dto.getFiles().length > 0) {
+			var uploaded = new ArrayList<Attachment>();
+			for (var mf : dto.getFiles()) {
+				try {
+					var fe = ConvertToFileBase64.convertToFileEntity(mf, dto.getPathFile(), note);
+					fe.setNote(note);
+					uploaded.add(fe);
+				} catch (IOException e) {
+					errorLogService.logError("note/update files", e);
+				}
+			}
+
+			note.getFiles().addAll(uploaded);
+		}
+
+	    //Salvataggio e storico
 	    noteRepository.save(note);
-
-	    // Salvataggio nella change history
-	    changeHistoryService.saveChange(
-	        "Note",
-	        note,
-	        "UPDATE",
-	        null,
-	        note.toString(),
-	        note.getUser(),
-	        LocalDateTime.now()
-	    );
-
+	    changeHistoryService.saveChange(note , "UPDATE", current, LocalDateTime.now());
 	    return true;
 	}
-	
+
+
+	@Transactional
 	@Override
 	public boolean removeNoteById(long id) {
 		User user = authUtils.getLoggedUser();
+
+		if (user == null) {
+			throw new AccessDeniedException("Non puoi modificare questa nota");
+		}
 
 		// Trova la nota tramite l'id e verifica che appartenga all'utente
 		Optional<Note> optionalNote = noteRepository.findById(id);
 
 		if (optionalNote.isEmpty()) {
-			return false;
+	        throw new AccessDeniedException("Non puoi eliminare questa nota");
 		}
 
 		Note note = optionalNote.get();
 
 		// Verifica che la nota appartenga all'utente loggato
 		if (note.getUser().getId() != user.getId()) {
-			return false;
+	        throw new AccessDeniedException("Non puoi eliminare questa nota non autorizzato");
 		}
-		
-		changeHistoryService.saveChange("Note",
-				note, 
-				"DELETE", 
-				null, 
-				note.toString(), 
-				user, 
-				LocalDateTime.now());
-
-
 		noteRepository.delete(note);
+
+		noteRepository.flush();
+
+		changeHistoryService.saveChange(note, "DELETE", user, LocalDateTime.now());
+
 		return true;
 	}
-	
+
 	@Override
 	public boolean hasImportantNotesThisWeek() {
 		Long userId = authUtils.getLoggedUserId();
-		
-		 // Ottieni la data di oggi
-	    LocalDate today = LocalDate.now();
-	    
-	    // Ottieni il primo giorno del mese corrente
-	    LocalDate firstDayOfMonth = today.withDayOfMonth(1);
-	    
-	    // Ottieni l'ultimo giorno del mese corrente
-	    LocalDate lastDayOfMonth = today.withDayOfMonth(1).plusMonths(1).minusDays(1);
 
-	    // Convertili in LocalDateTime (per includere anche l'ora)
-	    LocalDateTime startDateTime = firstDayOfMonth.atStartOfDay();  // Primo giorno, inizio del giorno (00:00)
-	    LocalDateTime endDateTime = lastDayOfMonth.atTime(23, 59, 59); // Ultimo giorno, fine del giorno (23:59:59)
+		// Ottieni la data di oggi
+		LocalDate today = LocalDate.now();
 
-	    // Query che cerca note importanti per l'utente tra startOfWeek e endOfWeek
-	    List<Note> importantNotes = noteRepository.findByUserIdAndDateBetween(userId, startDateTime, endDateTime);
-	    
-	    return !importantNotes.isEmpty();
+		// Ottieni il primo giorno del mese corrente
+		LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+
+		// Ottieni l'ultimo giorno del mese corrente
+		LocalDate lastDayOfMonth = today.withDayOfMonth(1).plusMonths(1).minusDays(1);
+
+		// Convertili in LocalDateTime (per includere anche l'ora)
+		LocalDateTime startDateTime = firstDayOfMonth.atStartOfDay(); // Primo giorno, inizio del giorno (00:00)
+		LocalDateTime endDateTime = lastDayOfMonth.atTime(23, 59, 59); // Ultimo giorno, fine del giorno (23:59:59)
+
+		// Query che cerca note importanti per l'utente tra startOfWeek e endOfWeek
+		List<Note> importantNotes = noteRepository.findByUserIdAndDateBetween(userId, startDateTime, endDateTime);
+
+		return !importantNotes.isEmpty();
 	}
-	
+
 	@Override
-	public List<NoteResponseDto> getArchivedNotesByMonth(int month) {
-	    Long userId = authUtils.getLoggedUserId();
-	    LocalDate now = LocalDate.now();
-	    int year = now.getYear();
+	public List<DateNoteSummaryDto> getArchivedNotesByMonth(int month, int year) {
+		Long userId = authUtils.getLoggedUserId();
+		if (userId == null) {
+			throw new RuntimeException("Utente non autenticato");
+		}
 
-	    List<DateNote> dateNotes = dateNoteRepository.findArchivedNotesByMonthAndYear(userId, month, year);
+		// se anno = 0 → anno corrente
+		if (year == 0) {
+			year = LocalDate.now().getYear();
+		}
 
-	    List<NoteResponseDto> noteResponseDtos = new ArrayList<>();
+		LocalDateTime start;
+		LocalDateTime end;
 
-	    for (DateNote dateNote : dateNotes) {
-	        List<NoteWithFilesDto> notesDto = new ArrayList<>();
+		if (month == 0) {
+			// tutto l’anno
+			start = LocalDate.of(year, 1, 1).atStartOfDay();
+			end = LocalDate.of(year, 12, 31).atTime(23, 59, 59);
+		} else {
+			// solo il mese specificato
+			LocalDate firstOfMonth = LocalDate.of(year, month, 1);
+			start = firstOfMonth.atStartOfDay();
+			end = firstOfMonth.withDayOfMonth(firstOfMonth.lengthOfMonth()).atTime(23, 59, 59);
+		}
 
-	        for (Note note : dateNote.getNotes()) {
-	            if (!note.isArchived()) {
-	                continue; // Sicurezza extra: ignora le non archiviate anche se non dovrebbe servire
-	            }
+		List<DateNote> days = dateNoteRepository.findArchivedByUserAndDateRange(userId, start, end);
 
-	            List<FileResponseDto> fileDtos = new ArrayList<>();
+		// mappatura in DTO
+		List<DateNoteSummaryDto> result = new ArrayList<>();
+		for (DateNote dn : days) {
+			List<NoteSummaryDto> notesDto = new ArrayList<>();
+			for (Note n : dn.getNotes()) {
+				String color = n.getPersonalizedNote() != null ? n.getPersonalizedNote().getColor() : null;
+				notesDto.add(new NoteSummaryDto(n.getTitle(), n.isImportant(), color));
+			}
+			result.add(new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
+		}
 
-	            for (Attachment file : note.getFiles()) {
-	                fileDtos.add(new FileResponseDto(file.getId(), file.getNome(), file.getPath(), file.getBase64()));
-	            }
-
-	            PersonalizedNoteResponseDto personalizedDto = null;
-	            if (note.getPersonalizedNote() != null) {
-	                personalizedDto = new PersonalizedNoteResponseDto(note.getPersonalizedNote());
-	            }
-
-	            notesDto.add(new NoteWithFilesDto(note.getId(), note.getTitle(), note.getDescription(),
-	                    note.isImportant(), personalizedDto, fileDtos));
-	        }
-
-	        if (!notesDto.isEmpty()) {
-	            noteResponseDtos.add(new NoteResponseDto(dateNote.getId(), dateNote.getEventDate(), notesDto));
-	        }
-	    }
-
-	    return noteResponseDtos;
+		return result;
 	}
 
+	@Override
+	public Boolean addArchived(long idNote) {
+		User user = authUtils.getLoggedUser();
+		if (user == null) {
+			throw new RuntimeException("Utente non autenticato");
+		}
 
+		Optional<Note> noteOptional = noteRepository.findById(idNote);
+
+		if (!noteOptional.isPresent()) {
+			throw new EntityNotFoundException("Nota non trovata con id: " + idNote);
+		}
+
+		Note note = noteOptional.get();
+
+		note.setArchived(!note.getIsArchived());
+
+		noteRepository.save(note);
+
+		changeHistoryService.saveChange(note, "ARCHIVED", user, LocalDateTime.now());
+
+		return true;
+	}
 }

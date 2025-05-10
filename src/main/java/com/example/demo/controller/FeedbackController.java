@@ -1,60 +1,181 @@
 package com.example.demo.controller;
 
-import java.util.Map;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.entity.Feedback;
-import com.example.demo.entity.User;
+import com.example.demo.dto.FeedbackDto.FeedbackResponseDto;
+import com.example.demo.dto.FeedbackDto.NewCommentRequestDto;
+import com.example.demo.service.FeedbackService;
 import com.example.demo.service.Iservice.IErrorLogService;
-import com.example.demo.service.Iservice.IFeedbackService;
-import com.example.demo.service.Iservice.IUserService;
 
-/*@RestController
-@RequestMapping("/api/feedbacks")*/
-/*public class FeedbackController {
+@RestController
+@RequestMapping("/api/feedback")
+public class FeedbackController {
 
-	  private final IUserService userService;
-	  private final IErrorLogService errorLogService;
-	  private final IFeedbackService feedbackService;
-	  
-	  public FeedbackController(IUserService userService
-			  ,IErrorLogService errorLogService
-			  ,IFeedbackService feedbackService) {
-		this.userService = userService;
-		this.errorLogService = errorLogService;
+	private final FeedbackService feedbackService;
+	private final IErrorLogService logErrorService;
+
+	public FeedbackController(FeedbackService feedbackService, IErrorLogService logErrorService) {
 		this.feedbackService = feedbackService;
-		  
-	  }
-
-	  @PostMapping("/submit")
-	    public ResponseEntity<?> createComment(@RequestBody Map<String, String> body) {
-	      try {
-	    	  String comment = body.get("comment");
-		      Feedback feedback = feedbackService.createFeedback(comment);
-		      return ResponseEntity.ok(feedback);
-		} catch (Exception e) {
-			errorLogService.logError("DateNote/getById", e);
+		this.logErrorService = logErrorService;
+	}
+	 
+    @PostMapping("/comment")
+    public ResponseEntity<?> postComment(@RequestBody NewCommentRequestDto dto) {
+        try {
+        	boolean success = feedbackService.userSendContact(dto);
+            return ResponseEntity.ok(success);
+        } catch (Exception e) {
+			logErrorService.logError("feedback/comment", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
-		}  
-		  
-		 
-	    }
-	  
-	    @PostMapping("/create")
-	    @PreAuthorize("hasRole('ADMIN')")
-	    public ResponseEntity<?> creatAnswer(@RequestBody String feedback) {
-	    	{
-	    		 Feedback feedback = feedbackService.respondToFeedback(feedback);
-	            return ResponseEntity.ok(feedback);
-	        }
-	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utente non autorizzato");
-	    }
-	    
-}*/
+		}
+    
+    }
+
+    @PostMapping("/{id}/reply")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> reply(@PathVariable Long id,
+                                         @RequestBody NewCommentRequestDto dto) {
+        try {
+        	boolean success = feedbackService.adminReply(id, dto);
+            return ResponseEntity.ok(success);
+        } catch (Exception e) {
+			logErrorService.logError("feedback/reply", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+		}
+    	
+    }
+
+    @PostMapping("/{id}/read")
+    public ResponseEntity<?> markRead(@PathVariable Long id) {
+    	try {
+    		feedbackService.markAsRead(id);
+            return ResponseEntity.ok().build();
+    	 } catch (Exception e) {
+ 			logErrorService.logError("feedback/read", e);
+ 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+ 		}
+        
+    }
+
+    @GetMapping("/unread")
+    public ResponseEntity<?> getUnread() {
+    	try {
+    		 List<FeedbackResponseDto> list = feedbackService.getUnreadForCurrentUser();
+    	        return ResponseEntity.ok(list);
+    	 } catch (Exception e) {
+ 			logErrorService.logError("feedback/unread", e);
+ 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+ 		}
+       
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAll() {
+    	try {
+    		  List<FeedbackResponseDto> all = feedbackService.getAllComments();
+    	        return ResponseEntity.ok(all);
+    	 } catch (Exception e) {
+ 			logErrorService.logError("feedback/all", e);
+ 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+ 		}
+      
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<?> getMy() {
+    	try {
+    	      List<FeedbackResponseDto> mine = feedbackService.getMyCommentsWithReplies();
+    	        return ResponseEntity.ok(mine);
+    	 } catch (Exception e) {
+ 			logErrorService.logError("feedback//my", e);
+ 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+ 		}
+  
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        try {
+        	FeedbackResponseDto dto = feedbackService.getCommentById(id);
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+			logErrorService.logError("feedback/getbyId", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+		}
+    	
+    }
+
+    @GetMapping("/my/{id}")
+    public ResponseEntity<?> getMyById(@PathVariable Long id) {
+        try {
+        	FeedbackResponseDto dto = feedbackService.getMyCommentById(id);
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+			logErrorService.logError("feedback/getbyId", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+		}
+    	
+    }    
+ 
+    @GetMapping("/user/unread/count")
+    public ResponseEntity<?> getUnreadCountForUser() {
+    	try {
+    		 long count = feedbackService.countUnreadForCurrentUser();
+    	        return ResponseEntity.ok(count);    
+    } catch (Exception e) {
+		logErrorService.logError("feedback/user/unread/count", e);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+	}
+}
+
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/reply/count")
+    public ResponseEntity<?> getPendingRepliesForAdmin() {
+    	try {
+    		  long count = feedbackService.countFeedbacksToReply();
+    	        return ResponseEntity.ok(count);
+    	 } catch (Exception e) {
+ 			logErrorService.logError("feedback/admin/reply/count", e);
+ 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+ 		}
+      
+    }
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/all-with-replies")
+    public ResponseEntity<?> getAllWithReplies() {
+    	try {
+    		  List<FeedbackResponseDto> list = feedbackService.getAllComments();       
+    	        return ResponseEntity.ok(list);
+    	 } catch (Exception e) {
+ 			logErrorService.logError("feedback/admin/all-with-replies", e);
+ 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+ 		}
+      
+    }
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/unread/count")
+    public ResponseEntity<?> getAdminUnreadCount() {
+    	try {
+    		long count = feedbackService.countUnreadForCurrentUser();
+            return ResponseEntity.ok(count);
+    	 } catch (Exception e) {
+ 			logErrorService.logError("feedback/getbyId", e);
+ 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+ 		}
+        
+    }
+}

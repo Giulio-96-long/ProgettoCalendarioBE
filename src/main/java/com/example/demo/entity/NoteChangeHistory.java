@@ -5,26 +5,18 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "change_history")
-public class ChangeHistory {
+public class NoteChangeHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String modifiedEntity;
-
+    private String changeType;
+    
     @ManyToOne
     @JoinColumn(name = "note_id")
     private Note note;
-
-    private String changeType;
-
-    @Column(length = 5000)
-    private String previousData;
-
-    @Column(length = 5000)
-    private String newData;
-
+    
     @ManyToOne
     @JoinColumn(name = "modified_by")
     private User modifiedBy;
@@ -39,36 +31,12 @@ public class ChangeHistory {
 		this.id = id;
 	}
 
-	public String getModifiedEntity() {
-		return modifiedEntity;
-	}
-
-	public void setModifiedEntity(String modifiedEntity) {
-		this.modifiedEntity = modifiedEntity;
-	}	
-
 	public String getChangeType() {
 		return changeType;
 	}
 
 	public void setChangeType(String changeType) {
 		this.changeType = changeType;
-	}
-
-	public String getPreviousData() {
-		return previousData;
-	}
-
-	public void setPreviousData(String previousData) {
-		this.previousData = previousData;
-	}
-
-	public String getNewData() {
-		return newData;
-	}
-
-	public void setNewData(String newData) {
-		this.newData = newData;
 	}
 
 	public User getModifiedBy() {
@@ -93,7 +61,6 @@ public class ChangeHistory {
 
 	public void setNote(Note note) {
 		this.note = note;
-	}
-
-    
+	}		
+	
 }

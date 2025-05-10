@@ -41,15 +41,11 @@ public class SecurityConfig {
                 "/swagger-ui.html",
                 "/swagger-resources/**",
                 "/webjars/**",
-                "/register",
-                "/login",
-                "/api/user/register",
-                "/api/user/login"                
+                "/api/auth/register",
+                "/api/auth/login"                
             ).permitAll()
-            .requestMatchers("/api/admin/**").hasRole("ADMIN")
-            .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-            .anyRequest().authenticated()
+            .anyRequest().hasAnyRole("USER","ADMIN")
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);       
 
@@ -72,7 +68,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://127.0.0.1:5501")); // Origine frontend
+        config.setAllowedOrigins(List.of("http://127.0.0.1:5501","http://localhost:5501")); // Origine frontend
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Permette invio cookie/Authorization header

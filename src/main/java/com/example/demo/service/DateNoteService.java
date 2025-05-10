@@ -9,14 +9,15 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.PersonalizedNoteDto.PersonalizedNoteResponseDto;
 import com.example.demo.dto.fileDto.FileResponseDto;
+import com.example.demo.dto.noteDto.DateNoteDetailDto;
 import com.example.demo.dto.noteDto.NoteWithFilesDto;
-import com.example.demo.entity.Attachment;
 import com.example.demo.entity.DateNote;
 import com.example.demo.entity.Note;
 import com.example.demo.repository.DateNoteRepository;
 import com.example.demo.service.Iservice.IChangeHistoryService;
 import com.example.demo.service.Iservice.IDateNoteService;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -29,36 +30,26 @@ public class DateNoteService implements IDateNoteService {
 		this.dateNoteRepository = dateNoteRepository;
 		this.changeHistoryService = changeHistoryService;
 	}
-
+	
 	@Override
-	public List<NoteWithFilesDto> getNotesByDateNoteId(long idDateNote) {
+	public DateNoteDetailDto getNotesByDateNoteId(long idDateNote) {
+		DateNote dn = dateNoteRepository.findById(idDateNote)
+				.orElseThrow(() -> new EntityNotFoundException("DateNote non trovato"));
 
-		java.util.Optional<DateNote> dateNoteOptional = dateNoteRepository.findById(idDateNote);
-
-		if (dateNoteOptional.isEmpty()) {
-			return new ArrayList<>();
-		}
-
-		DateNote dateNote = dateNoteOptional.get();
 		List<NoteWithFilesDto> noteDtos = new ArrayList<>();
+		for (Note note : dn.getNotes()) {
+			List<FileResponseDto> fileDtos = note.getFiles().stream()
+					.map(f -> new FileResponseDto(f.getId(), f.getNome(), f.getBase64())).toList();
 
-		for (Note note : dateNote.getNotes()) {
-			List<FileResponseDto> fileDtos = new ArrayList<>();
-
-			for (Attachment file : note.getFiles()) {
-				fileDtos.add(new FileResponseDto(file.getId(), file.getNome(), file.getPath(), file.getBase64()));
-			}
-
-			PersonalizedNoteResponseDto personalizedDto = null;
-			if (note.getPersonalizedNote() != null) {
-				personalizedDto = new PersonalizedNoteResponseDto(note.getPersonalizedNote());
-			}
+			PersonalizedNoteResponseDto pdto = note.getPersonalizedNote() != null
+					? new PersonalizedNoteResponseDto(note.getPersonalizedNote())
+					: null;
 
 			noteDtos.add(new NoteWithFilesDto(note.getId(), note.getTitle(), note.getDescription(), note.isImportant(),
-					personalizedDto, fileDtos));
+					pdto, fileDtos));
 		}
 
-		return noteDtos;
+		return new DateNoteDetailDto(dn.getId(), dn.getEventDate(), noteDtos);
 	}
 
 	@Override
@@ -73,12 +64,15 @@ public class DateNoteService implements IDateNoteService {
 		DateNote dateNote = dateNoteOptional.get();
 
 		for (Note note : dateNote.getNotes()) {
-			changeHistoryService.saveChange("Note", note, "DELETE", null, note.toString(), note.getUser(),
+			changeHistoryService.saveChange(				
+					note,
+					"DELETE",
+					note.getUser(),
 					LocalDateTime.now());
 
 			dateNoteRepository.delete(dateNote);
 		}
-		
+
 		return true;
 	}
 }

@@ -29,13 +29,13 @@ public class JwtUtil {
 
 	   public String generateToken(String email, String role) {
 
-	        // Usa Instant per ottenere il timestamp corrente
+	        // Instant per ottenere il timestamp corrente
 	        Instant now = Instant.now();
 
-	        // Aggiungi la durata dell'expiration in millisecondi
+	        // Aggiunge la durata dell'expiration in millisecondi
 	        Instant expiration = now.plus(jwtExpirationMs, ChronoUnit.MILLIS);
 
-	        // Converti Instant in Date per l'uso con JWT
+	        // Converte Instant in Date per l'uso con JWT
 	        Date issuedAt = Date.from(now);
 	        Date expirationDate = Date.from(expiration);
 
@@ -54,7 +54,7 @@ public class JwtUtil {
     public String extractEmail(String token) {
      
         Claims claims = Jwts.parserBuilder()  // Usa parserBuilder
-                .setSigningKey(jwtSecret)            // Imposta la chiave sicura
+                .setSigningKey(jwtSecret)     // Imposta la chiave sicura
                 .build()                       // Crea il parser
                 .parseClaimsJws(token)         // Decodifica il token
                 .getBody();                    // Ottieni il corpo del JWT
@@ -66,7 +66,7 @@ public class JwtUtil {
         try {
           
             Jwts.parserBuilder()              // Usa parserBuilder
-                .setSigningKey(jwtSecret)           // Imposta la chiave sicura
+                .setSigningKey(jwtSecret)     // Imposta la chiave sicura
                 .build()                      // Costruisci il parser
                 .parseClaimsJws(token);       // Analizza il token
 

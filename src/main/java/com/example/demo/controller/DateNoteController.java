@@ -12,7 +12,7 @@ import com.example.demo.service.Iservice.IDateNoteService;
 import com.example.demo.service.Iservice.IErrorLogService;
 
 @RestController
-@RequestMapping("/api/DateNote")
+@RequestMapping("/api/dateNote")
 public class DateNoteController {
 
 	public final IDateNoteService dateNoteService;

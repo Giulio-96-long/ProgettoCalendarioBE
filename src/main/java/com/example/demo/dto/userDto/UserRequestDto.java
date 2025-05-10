@@ -8,6 +8,8 @@ public class UserRequestDto {
 	private String password;
 	
 	private String username;
+	
+	private String lastname;
 
 	public UserRequestDto() {}
 	
@@ -33,6 +35,14 @@ public class UserRequestDto {
 
 	public void setUsername(String username) {
 		this.username = username;
+	}
+
+	public String getLastname() {
+		return lastname;
+	}
+
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
 	}
 	
 	

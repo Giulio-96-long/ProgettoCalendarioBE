@@ -2,31 +2,37 @@ package com.example.demo.dto.noteDto;
 
 import java.time.LocalDateTime;
 
+import org.springframework.web.multipart.MultipartFile;
+
 public class NoteUpdateRequestDto {
 
-	private long id;
+	private long idDateNote;
 
 	private String title;
 
 	private String description;
 
-	private boolean isImportant;
+	private Boolean isImportant;
 
 	private LocalDateTime eventDate;
 
 	private String color;
 
-	private String customMessage;
+	private String customMessage;	
+	 
+	private MultipartFile[] files;
+	
+	private String pathFile;
 
 	public NoteUpdateRequestDto() {
 	}
 
-	public long getId() {
-		return id;
+	public long getIdDateNote() {
+		return idDateNote;
 	}
 
-	public void setId(long id) {
-		this.id = id;
+	public void setIdDateNote(long idDateNote) {
+		this.idDateNote = idDateNote;
 	}
 
 	public String getTitle() {
@@ -45,11 +51,11 @@ public class NoteUpdateRequestDto {
 		this.description = description;
 	}
 
-	public boolean isImportant() {
+	public Boolean getIsImportant() {
 		return isImportant;
 	}
 
-	public void setImportant(boolean isImportant) {
+	public void setIsImportant(Boolean isImportant) {
 		this.isImportant = isImportant;
 	}
 
@@ -76,4 +82,22 @@ public class NoteUpdateRequestDto {
 	public void setCustomMessage(String customMessage) {
 		this.customMessage = customMessage;
 	}
+
+	public MultipartFile[] getFiles() {
+		return files;
+	}
+
+	public void setFiles(MultipartFile[] files) {
+		this.files = files;
+	}
+
+	public String getPathFile() {
+		return pathFile;
+	}
+
+	public void setPathFile(String pathFile) {
+		this.pathFile = pathFile;
+	}
+	
+	
 }

@@ -6,27 +6,28 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.demo.dto.noteDto.NoteResponseDto;
+import com.example.demo.dto.noteDto.DateNoteSummaryDto;
 import com.example.demo.dto.noteDto.NoteUpdateRequestDto;
 import com.example.demo.dto.noteDto.NoteWithFilesDto;
 
 public interface INoteService {
 
-	boolean newNote(String title, String description, boolean isImportant,String color, String message, LocalDateTime eventDate, MultipartFile[] files, String pathFile) throws IOException;
-	
-	List<NoteResponseDto> getAllNote();
+	long newNote(String title, String description, boolean isImportant, String color, String message, Long dateNoteId,
+			LocalDateTime eventDate, MultipartFile[] files, String pathFile) throws IOException;
 
 	NoteWithFilesDto getNoteById(long id);
-	
+
 	boolean updateNote(NoteUpdateRequestDto noteUpdateRequestDto);
 
 	boolean removeNoteById(long id);
 
-	List<NoteResponseDto> getNotesForMonth(int position);
+	List<DateNoteSummaryDto> getNotesForMonth(int position, String order);
 
-	List<NoteResponseDto> getNotesByMonth(int month);
-	
+	List<DateNoteSummaryDto> getNotesByMonth(int month, int year, String order);
+
 	boolean hasImportantNotesThisWeek();
 
-	List<NoteResponseDto> getArchivedNotesByMonth(int month);
+	List<DateNoteSummaryDto> getArchivedNotesByMonth(int month, int year);
+	
+	Boolean addArchived(long idNote);
 }

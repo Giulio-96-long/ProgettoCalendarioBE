@@ -32,9 +32,6 @@ public class Attachment {
 	@Column(nullable = true, columnDefinition = "LONGTEXT")
 	private String base64;
 	
-	@Column(nullable = true)
-	private String path;	
-		
 	@ManyToOne
 	@JoinColumn(name = "note_id", nullable = false)
 	private Note note;
@@ -76,14 +73,6 @@ public class Attachment {
 
 	public void setBase64(String base64) {
 		this.base64 = base64;
-	}
-
-	public String getPath() {
-		return path;
-	}
-
-	public void setPath(String path) {
-		this.path = path;
 	}
 
 	public Note getNote() {

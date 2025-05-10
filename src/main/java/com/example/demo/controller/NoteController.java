@@ -1,11 +1,11 @@
 package com.example.demo.controller;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.demo.dto.noteDto.NoteSearchByMonthRequest;
 import com.example.demo.dto.noteDto.NoteUpdateRequestDto;
 import com.example.demo.service.Iservice.IErrorLogService;
 import com.example.demo.service.Iservice.INoteService;
@@ -37,16 +39,18 @@ public class NoteController {
 
 	@PostMapping(value = "/new")
 	public ResponseEntity<?> newNote(@RequestParam("title") String title,
-			@RequestParam("description") String description, @RequestParam("isImportant") Boolean isImportant,
+			@RequestParam(value = "description", required = false) String description,
+			@RequestParam("isImportant") Boolean isImportant,
 			@RequestParam(value = "color", required = false) String color,
 			@RequestParam(value = "message", required = false) String message,
-			@RequestParam("dateNote") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateNote,
+			@RequestParam(value = "dateNoteId", required = false) Long dateNoteId,
+			@RequestParam(value = "dateNote", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateNote,
 			@RequestParam(value = "files", required = false) MultipartFile[] files,
 			@RequestParam(value = "pathFile", required = false) String pathFile) throws IOException {
+		
 		try {
 			var response = noteService.newNote(title, description, isImportant != null ? isImportant : false, color,
-					message, dateNote, files, pathFile);
-
+					message, dateNoteId, dateNote, files, pathFile);			
 			return ResponseEntity.ok(response);
 
 		} catch (Exception e) {
@@ -59,7 +63,7 @@ public class NoteController {
 	@GetMapping("/getById/{id}")
 	public ResponseEntity<?> getById(@PathVariable long id) {
 		try {
-			var response = noteService.getNoteById(id);
+			var response = noteService.getNoteById(id);			
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
 			errorLogService.logError("note/getById", e);
@@ -67,27 +71,17 @@ public class NoteController {
 		}
 
 	}
-
-	@GetMapping("/getNotesForMonth")
-	public ResponseEntity<?> getNotesForMonth(@RequestParam int positionMonth) {
-		try {
-			var response = noteService.getNotesForMonth(positionMonth);
-			return ResponseEntity.ok(response);
-		} catch (Exception e) {
-			errorLogService.logError("note/getNotesForMonth", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
-		}
-
-	}
-
-	@GetMapping("/searchByMonth")
-	public ResponseEntity<?> searchByMonth(@RequestParam(required = false) Integer month) {
-		try {
-			if (month == null || month == 0) {
-				// Se month è nullo o 0, prendi il mese corrente
-				month = LocalDate.now().getMonthValue();
-			}
-			var response = noteService.getNotesByMonth(month);
+	
+	@PostMapping("/searchByMonth")
+	public ResponseEntity<?> searchByMonth(
+			@RequestBody NoteSearchByMonthRequest input) {
+		try {			
+			var response =
+					noteService.getNotesByMonth(
+							input.month,
+							input.year,
+							input.order);
+		
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
 			errorLogService.logError("note/searchByMonth", e);
@@ -96,10 +90,45 @@ public class NoteController {
 
 	}
 
-	@PutMapping("/update")
-	public ResponseEntity<?> updateNote(@RequestBody NoteUpdateRequestDto noteUpdateRequestDto) {
+	@GetMapping("/getNotesForMonth")
+	public ResponseEntity<?> getNotesForMonth(@RequestParam int positionMonth,
+			@RequestParam(defaultValue = "asc") String order) {
 		try {
-			boolean updated = noteService.updateNote(noteUpdateRequestDto);
+			var response = noteService.getNotesForMonth(positionMonth, order);			
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			errorLogService.logError("note/getNotesForMonth", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+		}
+
+	}
+
+	
+
+	@PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> updateNote(  @RequestParam("idDateNote") long idDateNote,
+		    @RequestParam("title") String title,
+		    @RequestParam("description") String description,
+		    @RequestParam("isImportant") Boolean isImportant,
+		    @RequestParam(name = "eventDate", required = false)
+		      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME )
+		      LocalDateTime eventDate,
+		    @RequestParam(name = "color", required = false) String color,
+		    @RequestParam(name = "customMessage", required = false) String customMessage,
+		    @RequestParam(name = "pathFile", required = false) String pathFile,
+		    @RequestPart(name = "files", required = false) MultipartFile[] files) {
+		try {
+			 var dto = new NoteUpdateRequestDto();
+			    dto.setIdDateNote(idDateNote);
+			    dto.setTitle(title);
+			    dto.setDescription(description);
+			    dto.setIsImportant(isImportant);
+			    dto.setEventDate(eventDate);
+			    dto.setColor(color);
+			    dto.setCustomMessage(customMessage);
+			    dto.setPathFile(pathFile);
+			    dto.setFiles(files);
+			var updated = noteService.updateNote(dto);			
 			return ResponseEntity.ok(updated);
 		} catch (Exception e) {
 			errorLogService.logError("note/update", e);
@@ -110,7 +139,7 @@ public class NoteController {
 	@DeleteMapping("/delete/{id}")
 	public ResponseEntity<?> deleteNote(@PathVariable Long id) {
 		try {
-			boolean removed = noteService.removeNoteById(id);
+			var removed = noteService.removeNoteById(id);		
 			return ResponseEntity.ok(removed);
 		} catch (Exception e) {
 			errorLogService.logError("note/delete", e);
@@ -122,7 +151,7 @@ public class NoteController {
 	@GetMapping("/getImportantNotes")
 	public ResponseEntity<?> getNotifications() {
 		try {
-			var response = noteService.hasImportantNotesThisWeek();
+			var response = noteService.hasImportantNotesThisWeek();			
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
 			errorLogService.logError("note/getImportantNotes", e);
@@ -130,11 +159,26 @@ public class NoteController {
 		}
 
 	}
-	@GetMapping("/archived")
-	public ResponseEntity<?> getArchivedNotesByMonth(@RequestParam int month) {
+	
+	@PostMapping("/archived")
+	public ResponseEntity<?> searchByMonth(@RequestBody long idNote) {
+		try {			
+			var response = noteService.addArchived(idNote);		
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			errorLogService.logError("note/searchByMonth", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+		}
+
+	}
+	
+	@GetMapping("/getArchived")
+	public ResponseEntity<?> getArchivedNotesByMonth(
+			@RequestParam(required = false) int month,
+			@RequestParam(required = false) int year) {
 	    try {
-	    	var notes = noteService.getArchivedNotesByMonth(month);
-		    return ResponseEntity.ok(notes);
+	    	var response = noteService.getArchivedNotesByMonth(month, year);	    
+	    	return ResponseEntity.ok(response);
 		} catch (Exception e) {
 			errorLogService.logError("note/archived", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");

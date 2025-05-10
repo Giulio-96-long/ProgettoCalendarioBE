@@ -27,7 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
          User user = userRepository.findByEmail(email);
          
          List<GrantedAuthority> authorities = List.of(
-        	        new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase()) // es: ROLE_ADMIN
+        	        new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase())
         	    );
          
         return new org.springframework.security.core.userdetails.User(

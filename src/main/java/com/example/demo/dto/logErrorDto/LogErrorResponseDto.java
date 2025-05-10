@@ -2,25 +2,33 @@ package com.example.demo.dto.logErrorDto;
 
 import java.time.LocalDateTime;
 
-public class LogErrorResposeDto {
-
-	  private String endpoint;
-	  private String errorMessage;
-	  private String stackTrace;
-	  private String account;
-	  
-	  public String getAccount() {
-		return account;
-	}
-
-	public void setAccount(String account) {
-		this.account = account;
-	}
-
+public class LogErrorResponseDto {
+	
+	private Long   id; 
+	private String endpoint;
+	private String errorMessage;
+	private String stackTrace;
+	private String user;
 	private LocalDateTime timestamp;
 
-	  public LogErrorResposeDto() {   
-	  }
+	public LogErrorResponseDto() {
+	}	
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getUser() {
+		return user;
+	}
+	
+	public void setUser(String user) {
+		this.user = user;
+	}
 
 	public String getEndpoint() {
 		return endpoint;
@@ -53,6 +61,5 @@ public class LogErrorResposeDto {
 	public void setTimestamp(LocalDateTime localDateTime) {
 		this.timestamp = localDateTime;
 	}
-	  
-	  
+
 }

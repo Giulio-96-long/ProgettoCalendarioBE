@@ -7,26 +7,22 @@ public class FileResponseDto {
 	private long id;
 	
 	private String nome;
-	
-	private String path;
-	
+
 	private String base64;
 
 	public FileResponseDto() {
 	}
 	
 	
-	public FileResponseDto(long id, String nome, String path, String base64) {		
+	public FileResponseDto(long id, String nome, String base64) {		
 		this.id = id;
 		this.nome = nome;
-		this.path = path;
 		this.base64 = base64;
 	}
 
 	public FileResponseDto(Attachment attachment) {
         this.id = attachment.getId();
         this.nome = attachment.getNome();
-        this.path = attachment.getPath();
         this.base64 = attachment.getBase64(); 
     }
 
@@ -44,14 +40,6 @@ public class FileResponseDto {
 
 	public void setNome(String nome) {
 		this.nome = nome;
-	}
-
-	public String getPath() {
-		return path;
-	}
-
-	public void setPath(String path) {
-		this.path = path;
 	}
 
 	public String getBase64() {

@@ -29,14 +29,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
-
+    
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();        
+        return path.equals("/api/auth/login") 
+        		|| path.equals("/api/auth/register");
+    }   
+    
+    
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         
-    	String authHeader = request.getHeader("Authorization");
-      
+    	String authHeader = request.getHeader("Authorization");   	
+    	
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             String email = jwtUtil.extractEmail(token);
@@ -46,9 +54,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 
                 if (jwtUtil.validateToken(token)) {                	
                 	String role = jwtUtil.extractRole(token); 
-                	List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+                	List<GrantedAuthority> authorities = 
+                			List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
 
-                	UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                	UsernamePasswordAuthenticationToken authentication = 
+                			new UsernamePasswordAuthenticationToken(
                 	    userDetails, null, authorities
                 	);
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -60,11 +70,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
-    }
+    } 
     
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();        
-        return path.equals("/login") || path.equals("/api/user/login") || path.equals("/api/user/register");
-    }
 }
