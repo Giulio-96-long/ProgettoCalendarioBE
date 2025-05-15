@@ -17,9 +17,8 @@ import com.example.demo.dto.userDto.LoginResponseDto;
 import com.example.demo.dto.userDto.UserRegisterResponseDto;
 import com.example.demo.dto.userDto.UserRequestDto;
 import com.example.demo.entity.User;
-import com.example.demo.service.UserService;
-import com.example.demo.service.Iservice.IErrorLogService;
-import com.example.demo.service.Iservice.IUserService;
+import com.example.demo.service.UserServiceImpl;
+import com.example.demo.service.Iservice.ErrorLogService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,19 +29,19 @@ public class AuthController {
 	@Autowired
 	private JwtUtil jwtUtil;
 
-	private final IErrorLogService errorLogService;
-	private final IUserService userService;
+	private final ErrorLogService errorLogService;
+	private final UserServiceImpl userServiceImpl;
 
-	public AuthController(IUserService serviceUser, UserService userService, IErrorLogService errorLogService) {
+	public AuthController(UserServiceImpl serviceUser, UserServiceImpl userServiceImpl, ErrorLogService errorLogService) {
 		this.errorLogService = errorLogService;
-		this.userService = userService;
+		this.userServiceImpl = userServiceImpl;
 
 	}
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequestDto dto) {
         try {
-            long id = userService.newUser(dto);
+            long id = userServiceImpl.newUser(dto);
             UserRegisterResponseDto out = new UserRegisterResponseDto(
                 id,
                 id != 0 ? "Utente registrato con successo" : "Email già esistente"
@@ -71,7 +70,7 @@ public class AuthController {
             String email = auth.getName();
 
             // Carico l’utente dal DB e controllo esistenza
-            User user = userService.findByEmail(email);
+            User user = userServiceImpl.findByEmail(email);
             if (user == null) {
                 // forza BadCredentials se non trovo l’utente
                 throw new BadCredentialsException("Credenziali non valide");
@@ -79,7 +78,7 @@ public class AuthController {
 
             // Genero il JWT e preparo il DTO
             String token = jwtUtil.generateToken(email, user.getRole());
-            long userId = userService.GetIdUser(email);
+            long userId = userServiceImpl.GetIdUser(email);
             LoginResponseDto resp = new LoginResponseDto(userId, token);
             return ResponseEntity.ok(resp);
 

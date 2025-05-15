@@ -17,7 +17,8 @@ public interface NoteChangeHistoryRepository extends JpaRepository<NoteChangeHis
 	@Query("""
 			SELECT n
 			FROM NoteChangeHistory n
-			 JOIN n.modifiedBy u
+			JOIN FETCH n.note
+			JOIN n.modifiedBy u
 			WHERE (:changeType IS NULL   OR LOWER(n.changeType) LIKE LOWER(CONCAT('%', :changeType, '%')))
 			  AND (:modifiedBy IS NULL   OR LOWER(u.username)   LIKE LOWER(CONCAT('%', :modifiedBy, '%')))
 			  AND (:startDate IS NULL    OR n.modificationDate >= :startDate)

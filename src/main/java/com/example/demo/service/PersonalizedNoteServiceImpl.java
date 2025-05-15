@@ -5,14 +5,14 @@ import org.springframework.stereotype.Service;
 import com.example.demo.dto.PersonalizedNoteDto.PersonalizedNoteResponseDto;
 import com.example.demo.entity.PersonalizedNote;
 import com.example.demo.repository.PersonalizedNoteRepository;
-import com.example.demo.service.Iservice.IPersonalizedNoteService;
+import com.example.demo.service.Iservice.PersonalizedNoteService;
 
 @Service
-public class PersonalizedNoteService implements IPersonalizedNoteService{
+public class PersonalizedNoteServiceImpl implements PersonalizedNoteService{
 
 	private final PersonalizedNoteRepository personalizedNoteRepository;
 	
-	public PersonalizedNoteService(PersonalizedNoteRepository personalizedNoteRepository) {
+	public PersonalizedNoteServiceImpl(PersonalizedNoteRepository personalizedNoteRepository) {
 		this.personalizedNoteRepository = personalizedNoteRepository;
 		
 	}

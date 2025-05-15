@@ -9,7 +9,7 @@ import com.example.demo.dto.NoteChangeHistoryDto.NoteChangeHistoryResponseDto;
 import com.example.demo.entity.Note;
 import com.example.demo.entity.User;
 
-public interface IChangeHistoryService {
+public interface NoteChangeHistoryService {
 
 	void saveChange(Note note, String changeType, User modifiedBy,
 			LocalDateTime modificationDate);

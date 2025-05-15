@@ -12,24 +12,28 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.logErrorDto.ErrorLogFilterDto;
 import com.example.demo.dto.logErrorDto.LogErrorResponseDto;
-import com.example.demo.service.Iservice.IErrorLogService;
+import com.example.demo.service.Iservice.ErrorLogService;
 
 @RestController
 @RequestMapping("/api/logError")
 public class ErrorLogController {
 
-	private final IErrorLogService logErrorService;
+	private final ErrorLogService logErrorService;
 
-	public ErrorLogController(IErrorLogService logErrorService) {
+	public ErrorLogController(ErrorLogService logErrorService) {
 		this.logErrorService = logErrorService;
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/filter")
 	public ResponseEntity<?> filterErrors(@RequestBody ErrorLogFilterDto filter) {
-
-		var response = logErrorService.getAllError(filter);
-		return ResponseEntity.ok(response);
+		try {
+			var response = logErrorService.getAllError(filter);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			logErrorService.logError("logError/filter", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+		}
 
 	}
 

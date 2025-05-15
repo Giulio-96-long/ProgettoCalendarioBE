@@ -14,12 +14,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-
 import com.example.demo.dto.userDto.ChangePasswordRequestDto;
 import com.example.demo.dto.userDto.UpdateUserRequestDto;
-import com.example.demo.service.Iservice.IUserService;
-import com.example.demo.service.UserService;
-import com.example.demo.service.Iservice.IErrorLogService;
+import com.example.demo.service.Iservice.UserService;
+import com.example.demo.service.UserServiceImpl;
+import com.example.demo.service.Iservice.ErrorLogService;
 
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -27,10 +26,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequestMapping("/api/user")
 public class UserController {
 
-	private final IErrorLogService errorLogService;
-	private final IUserService userService;
+	private final ErrorLogService errorLogService;
+	private final UserService userService;
 
-	public UserController(IUserService serviceUser, UserService userService, IErrorLogService errorLogService) {
+	public UserController(UserService serviceUser, UserService userService, ErrorLogService errorLogService) {
 		this.errorLogService = errorLogService;
 		this.userService = userService;
 
@@ -44,24 +43,20 @@ public class UserController {
 		} catch (Exception e) {
 			errorLogService.logError("User/me", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					  .body(Map.of("error", "Impossibile caricare il profilo"));
+					.body(Map.of("error", "Impossibile caricare il profilo"));
 		}
 	}
-	
-	
-	 @PostMapping("/getOrUpdatephoto")
-	    public ResponseEntity<?> uploadMyPhoto(
-	            @RequestParam("file") MultipartFile file) {
-	        try {	          
-	            var response = userService.uploadProfileImage(file);
-	            return ResponseEntity.ok(response);
-	        } catch (Exception e) {
-	            errorLogService.logError("User/me/photo", e);
-	            return ResponseEntity
-	                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                    .body(null);
-	        }
-	    }
+
+	@PostMapping("/getOrUpdatephoto")
+	public ResponseEntity<?> uploadMyPhoto(@RequestParam("file") MultipartFile file) {
+		try {
+			var response = userService.uploadProfileImage(file);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			errorLogService.logError("User/me/photo", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		}
+	}
 
 	@PostMapping("/changePassword")
 	public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequestDto request) {
@@ -74,19 +69,17 @@ public class UserController {
 		}
 
 	}
-	
+
 	@PutMapping("/profile")
-    public ResponseEntity<?> updateMe(@RequestBody UpdateUserRequestDto dto) {
-        try {
-            userService.updateCurrentUser(dto);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            errorLogService.logError("User/me PUT", e);
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(e.getMessage());
-        }
-    }
+	public ResponseEntity<?> updateMe(@RequestBody UpdateUserRequestDto dto) {
+		try {
+			userService.updateCurrentUser(dto);
+			return ResponseEntity.ok().build();
+		} catch (Exception e) {
+			errorLogService.logError("User/me PUT", e);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
+	}
 
 	@DeleteMapping("/delete/{id}")
 	public ResponseEntity<?> deleteFile(@PathVariable Long id) {

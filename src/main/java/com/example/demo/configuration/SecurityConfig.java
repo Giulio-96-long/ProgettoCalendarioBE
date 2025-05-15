@@ -1,8 +1,10 @@
 package com.example.demo.configuration;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,6 +28,9 @@ import com.example.demo.authenticationToken.JwtAuthenticationFilter;
 @EnableWebSecurity
 public class SecurityConfig {
 
+	 @Value("${app.cors.allowed-origins}")
+	 private String allowedOrigins;
+	
     @Autowired
     private UserDetailsService userDetailsService;
 
@@ -68,8 +73,10 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://127.0.0.1:5501","http://localhost:5501")); // Origine frontend
+        List<String> origins = Arrays.asList(allowedOrigins.split(","));
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setExposedHeaders(List.of("X-Error-Code", "X-Error-Message"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Permette invio cookie/Authorization header
 

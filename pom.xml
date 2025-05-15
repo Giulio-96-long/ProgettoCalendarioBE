@@ -90,12 +90,12 @@
 		    <artifactId>jjwt-jackson</artifactId>
 		    <version>0.11.5</version>
 		    <scope>runtime</scope>
-		</dependency>			
+		</dependency>
+		<!--Autenticazione oauth-->			
 		<dependency>
-		    <groupId>com.h2database</groupId>
-		    <artifactId>h2</artifactId>
-		    <scope>runtime</scope>
-		</dependency>			
+		  <groupId>org.springframework.boot</groupId>
+		  <artifactId>spring-boot-starter-oauth2-client</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

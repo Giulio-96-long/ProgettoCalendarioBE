@@ -13,29 +13,40 @@ import com.example.demo.dto.noteDto.DateNoteDetailDto;
 import com.example.demo.dto.noteDto.NoteWithFilesDto;
 import com.example.demo.entity.DateNote;
 import com.example.demo.entity.Note;
+import com.example.demo.entity.User;
 import com.example.demo.repository.DateNoteRepository;
-import com.example.demo.service.Iservice.IChangeHistoryService;
-import com.example.demo.service.Iservice.IDateNoteService;
+import com.example.demo.service.Iservice.NoteChangeHistoryService;
+import com.example.demo.util.AuthUtils;
+import com.example.demo.service.Iservice.DateNoteService;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 @Service
-public class DateNoteService implements IDateNoteService {
+public class DateNoteServiceImpl implements DateNoteService {
 
 	private final DateNoteRepository dateNoteRepository;
-	private final IChangeHistoryService changeHistoryService;
+	private final NoteChangeHistoryService noteChangeHistoryService;
+	private final AuthUtils authUtils;
 
-	DateNoteService(DateNoteRepository dateNoteRepository, IChangeHistoryService changeHistoryService) {
+	DateNoteServiceImpl(DateNoteRepository dateNoteRepository, NoteChangeHistoryService noteChangeHistoryService,
+			AuthUtils authUtils) {
 		this.dateNoteRepository = dateNoteRepository;
-		this.changeHistoryService = changeHistoryService;
+		this.noteChangeHistoryService = noteChangeHistoryService;
+		this.authUtils = authUtils;
 	}
-	
+
 	@Override
 	public DateNoteDetailDto getNotesByDateNoteId(long idDateNote) {
-		DateNote dn = dateNoteRepository.findById(idDateNote)
-				.orElseThrow(() -> new EntityNotFoundException("DateNote non trovato"));
+		User user = authUtils.getLoggedUser();
+		if (user == null) {
+			throw new RuntimeException("User not authenticated");
+		}
 
+		DateNote dn = dateNoteRepository.findByIdAndUnarchivedNotes(idDateNote, user.getId());
+
+		if (dn == null) throw new EntityNotFoundException("DateNote non trovato");
+		
 		List<NoteWithFilesDto> noteDtos = new ArrayList<>();
 		for (Note note : dn.getNotes()) {
 			List<FileResponseDto> fileDtos = note.getFiles().stream()
@@ -64,11 +75,7 @@ public class DateNoteService implements IDateNoteService {
 		DateNote dateNote = dateNoteOptional.get();
 
 		for (Note note : dateNote.getNotes()) {
-			changeHistoryService.saveChange(				
-					note,
-					"DELETE",
-					note.getUser(),
-					LocalDateTime.now());
+			noteChangeHistoryService.saveChange(note, "DELETE", note.getUser(), LocalDateTime.now());
 
 			dateNoteRepository.delete(dateNote);
 		}

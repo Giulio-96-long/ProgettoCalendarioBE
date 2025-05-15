@@ -5,7 +5,7 @@ import java.util.List;
 import com.example.demo.dto.FeedbackDto.FeedbackResponseDto;
 import com.example.demo.dto.FeedbackDto.NewCommentRequestDto;
 
-public interface IFeedbackService {		
+public interface FeedbackService {		
 
     boolean userSendContact(NewCommentRequestDto dto);
 

@@ -13,15 +13,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
-import com.example.demo.service.Iservice.IErrorLogService;
+import com.example.demo.service.Iservice.ErrorLogService;
 
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private final IErrorLogService errorLogService;
+    private final ErrorLogService errorLogService;
 
-    public GlobalExceptionHandler(IErrorLogService errorLogService) {
+    public GlobalExceptionHandler(ErrorLogService errorLogService) {
         this.errorLogService = errorLogService;
     }
 

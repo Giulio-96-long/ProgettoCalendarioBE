@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import com.example.demo.dto.logErrorDto.ErrorLogFilterDto;
 import com.example.demo.dto.logErrorDto.LogErrorResponseDto;
 
-public interface IErrorLogService {
+public interface ErrorLogService {
 	
 	void logError(String request, Exception e);
 

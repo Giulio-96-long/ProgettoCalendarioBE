@@ -14,19 +14,19 @@ import com.example.demo.entity.Feedback;
 import com.example.demo.entity.User;
 import com.example.demo.repository.FeedbackRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.service.Iservice.IFeedbackService;
+import com.example.demo.service.Iservice.FeedbackService;
 import com.example.demo.util.AuthUtils;
 
 import jakarta.persistence.EntityNotFoundException;
 
 @Service
-public class FeedbackService implements IFeedbackService {
+public class FeedbackServiceImpl implements FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
     private final UserRepository userRepo;
     private final AuthUtils authUtils;
 
-    public FeedbackService(FeedbackRepository feedbackRepository,
+    public FeedbackServiceImpl(FeedbackRepository feedbackRepository,
                            UserRepository userRepo,
                            AuthUtils authUtils) {
         this.feedbackRepository = feedbackRepository;
@@ -46,7 +46,7 @@ public class FeedbackService implements IFeedbackService {
         if (admins.isEmpty()) {
             throw new EntityNotFoundException("Nessun ADMIN configurato");
         }
-
+       
         for (User admin : admins) {
             Feedback log = new Feedback();
             log.setSender(user);
@@ -118,6 +118,7 @@ public class FeedbackService implements IFeedbackService {
 
     @Override
     public List<FeedbackResponseDto> getAllComments() {
+    	
         return feedbackRepository
             .findAllByParentIsNullOrderByCreatedAtDesc()
             .stream()

@@ -7,7 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.fileDto.FileResponseDto;
 
-public interface IFileService {
+public interface FileService {
 
 	boolean newFile(long noteId, MultipartFile file, String pathFile) throws IOException;
 	

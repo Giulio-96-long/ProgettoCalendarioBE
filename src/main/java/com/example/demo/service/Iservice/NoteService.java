@@ -10,7 +10,7 @@ import com.example.demo.dto.noteDto.DateNoteSummaryDto;
 import com.example.demo.dto.noteDto.NoteUpdateRequestDto;
 import com.example.demo.dto.noteDto.NoteWithFilesDto;
 
-public interface INoteService {
+public interface NoteService {
 
 	long newNote(String title, String description, boolean isImportant, String color, String message, Long dateNoteId,
 			LocalDateTime eventDate, MultipartFile[] files, String pathFile) throws IOException;

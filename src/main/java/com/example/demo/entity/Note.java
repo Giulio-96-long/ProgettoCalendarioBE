@@ -187,7 +187,7 @@ public class Note {
 		return archived;
 	}
 
-	public void setArchived(boolean archived) {
+	public void setIsArchived(boolean archived) {
 		this.archived = archived;
 	}
 

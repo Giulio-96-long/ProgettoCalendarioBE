@@ -13,7 +13,7 @@ import com.example.demo.dto.userDto.UserInfoResponseDto;
 import com.example.demo.dto.userDto.UserRequestDto;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.service.Iservice.IUserService;
+import com.example.demo.service.Iservice.UserService;
 import com.example.demo.util.AuthUtils;
 
 import java.io.IOException;
@@ -22,14 +22,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
-public class UserService implements IUserService {
+public class UserServiceImpl implements UserService {
 	
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService customUserDetailsService;
     private final AuthUtils authUtils;
 
-    public UserService(UserRepository userRepository,
+    public UserServiceImpl(UserRepository userRepository,
     		PasswordEncoder passwordEncoder,
     		CustomUserDetailsService customUserDetailsService,
     		AuthUtils authUtils) {

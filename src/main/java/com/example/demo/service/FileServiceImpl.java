@@ -15,22 +15,22 @@ import com.example.demo.entity.Attachment;
 import com.example.demo.entity.Note;
 import com.example.demo.repository.FileRepository;
 import com.example.demo.repository.NoteRepository;
-import com.example.demo.service.Iservice.IChangeHistoryService;
-import com.example.demo.service.Iservice.IFileService;
+import com.example.demo.service.Iservice.NoteChangeHistoryService;
+import com.example.demo.service.Iservice.FileService;
 import com.example.demo.util.ConvertToFileBase64;
 
 @Service
-public class FileService implements IFileService {
+public class FileServiceImpl implements FileService {
 
 	private final NoteRepository noteRepository;
 	private final FileRepository fileRepository;
-	private final IChangeHistoryService changeHistoryService;
+	private final NoteChangeHistoryService noteChangeHistoryService;
 
-	public FileService(NoteRepository noteRepository, FileRepository fileRepository,
-			IChangeHistoryService changeHistoryService) {
+	public FileServiceImpl(NoteRepository noteRepository, FileRepository fileRepository,
+			NoteChangeHistoryService noteChangeHistoryService) {
 		this.noteRepository = noteRepository;
 		this.fileRepository = fileRepository;
-		this.changeHistoryService = changeHistoryService;
+		this.noteChangeHistoryService = noteChangeHistoryService;
 	}
 
 	@Override
@@ -53,7 +53,7 @@ public class FileService implements IFileService {
 
 		note.getFiles().addAll(newFiles);
 		noteRepository.save(note);
-		changeHistoryService.saveChange(note, "New File", note.getUser(), LocalDateTime.now());
+		noteChangeHistoryService.saveChange(note, "New File", note.getUser(), LocalDateTime.now());
 
 		return false;
 	}
@@ -78,7 +78,7 @@ public class FileService implements IFileService {
 
 		fileRepository.deleteById(id);
 
-		changeHistoryService.saveChange(note, "Remove File", note.getUser(), LocalDateTime.now());
+		noteChangeHistoryService.saveChange(note, "Remove File", note.getUser(), LocalDateTime.now());
 
 		return false;
 	}

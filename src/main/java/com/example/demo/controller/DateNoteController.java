@@ -8,17 +8,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.service.Iservice.IDateNoteService;
-import com.example.demo.service.Iservice.IErrorLogService;
+import com.example.demo.service.Iservice.DateNoteService;
+import com.example.demo.service.Iservice.ErrorLogService;
 
 @RestController
 @RequestMapping("/api/dateNote")
 public class DateNoteController {
 
-	public final IDateNoteService dateNoteService;
-	private final IErrorLogService errorLogService;
+	public final DateNoteService dateNoteService;
+	private final ErrorLogService errorLogService;
 
-	public DateNoteController(IDateNoteService dateNoteService, IErrorLogService errorLogService) {
+	public DateNoteController(DateNoteService dateNoteService, ErrorLogService errorLogService) {
 		this.dateNoteService = dateNoteService;
 		this.errorLogService = errorLogService;
 

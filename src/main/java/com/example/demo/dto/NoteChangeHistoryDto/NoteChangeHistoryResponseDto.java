@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class NoteChangeHistoryResponseDto {
 	private Long id;
 	private String changeType;
-	private Long noteId;
+	private String note;
 	private String modifiedBy;
 	private LocalDateTime modificationDate;
 
@@ -28,12 +28,12 @@ public class NoteChangeHistoryResponseDto {
 		this.changeType = changeType;
 	}
 
-	public Long getNoteId() {
-		return noteId;
+	public String getNote() {
+		return note;
 	}
 
-	public void setNoteId(Long noteId) {
-		this.noteId = noteId;
+	public void setNote(String note) {
+		this.note = note;
 	}
 
 	public String getModifiedBy() {

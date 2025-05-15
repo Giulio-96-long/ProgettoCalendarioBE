@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 
 @Entity
-@Table(name = "change_history")
+@Table(name = "note_change_history")
 public class NoteChangeHistory {
 
     @Id

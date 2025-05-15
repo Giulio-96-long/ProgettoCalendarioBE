@@ -21,17 +21,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.noteDto.NoteSearchByMonthRequest;
 import com.example.demo.dto.noteDto.NoteUpdateRequestDto;
-import com.example.demo.service.Iservice.IErrorLogService;
-import com.example.demo.service.Iservice.INoteService;
+import com.example.demo.service.Iservice.ErrorLogService;
+import com.example.demo.service.Iservice.NoteService;
 
 @RestController
 @RequestMapping("/api/note")
 public class NoteController {
 
-	private final INoteService noteService;
-	private final IErrorLogService errorLogService;
+	private final NoteService noteService;
+	private final ErrorLogService errorLogService;
 
-	public NoteController(INoteService noteService, IErrorLogService errorLogService) {
+	public NoteController(NoteService noteService, ErrorLogService errorLogService) {
 
 		this.noteService = noteService;
 		this.errorLogService = errorLogService;

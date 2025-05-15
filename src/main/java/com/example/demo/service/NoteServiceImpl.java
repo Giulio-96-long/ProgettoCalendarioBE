@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -25,11 +27,11 @@ import com.example.demo.entity.User;
 import com.example.demo.repository.DateNoteRepository;
 import com.example.demo.repository.NoteRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.service.Iservice.IChangeHistoryService;
-import com.example.demo.service.Iservice.IErrorLogService;
-import com.example.demo.service.Iservice.IFileService;
-import com.example.demo.service.Iservice.INoteService;
-import com.example.demo.service.Iservice.IPersonalizedNoteService;
+import com.example.demo.service.Iservice.NoteChangeHistoryService;
+import com.example.demo.service.Iservice.ErrorLogService;
+import com.example.demo.service.Iservice.FileService;
+import com.example.demo.service.Iservice.NoteService;
+import com.example.demo.service.Iservice.PersonalizedNoteService;
 import com.example.demo.util.AuthUtils;
 import com.example.demo.util.ConvertToFileBase64;
 
@@ -37,23 +39,23 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 @Service
-public class NoteService implements INoteService {
+public class NoteServiceImpl implements NoteService {
 
 	private final AuthUtils authUtils;
 	private final NoteRepository noteRepository;
-	private final IErrorLogService errorLogService;
+	private final ErrorLogService errorLogService;
 	private final DateNoteRepository dateNoteRepository;
-	private final IChangeHistoryService changeHistoryService;
+	private final NoteChangeHistoryService noteChangeHistoryService;
 
-	public NoteService(NoteRepository noteRepository, UserRepository userRepository, AuthUtils authUtils,
-			DateNoteRepository dateNoteRepository, IErrorLogService errorLogService,
-			IChangeHistoryService changeHistoryService, IPersonalizedNoteService personalizedNoteService,
-			IFileService fileService) {
+	public NoteServiceImpl(NoteRepository noteRepository, UserRepository userRepository, AuthUtils authUtils,
+			DateNoteRepository dateNoteRepository, ErrorLogService errorLogService,
+			NoteChangeHistoryService noteChangeHistoryService, PersonalizedNoteService personalizedNoteService,
+			FileService fileService) {
 		this.noteRepository = noteRepository;
 		this.authUtils = authUtils;
 		this.errorLogService = errorLogService;
 		this.dateNoteRepository = dateNoteRepository;
-		this.changeHistoryService = changeHistoryService;
+		this.noteChangeHistoryService = noteChangeHistoryService;
 	}
 
 	@Override
@@ -67,11 +69,9 @@ public class NoteService implements INoteService {
 		}
 		DateNote dn;
 		if (dateNoteId != null) {
-			// usa quello esistente
 			dn = dateNoteRepository.findById(dateNoteId)
 					.orElseThrow(() -> new EntityNotFoundException("DateNote non trovato"));
 		} else {
-			// crea uno nuovo con la data passata
 			if (dateNote == null) {
 				throw new IllegalArgumentException("Devi passare dateNote o dateNoteId");
 			}
@@ -80,7 +80,6 @@ public class NoteService implements INoteService {
 			dateNoteRepository.save(dn);
 		}
 
-		// Crea la Note e associa la DateNote
 		Note newNote = new Note();
 		newNote.setUser(user);
 		newNote.setTitle(title);
@@ -113,7 +112,7 @@ public class NoteService implements INoteService {
 
 		noteRepository.save(newNote);
 
-		changeHistoryService.saveChange(newNote, "CREATE", user, LocalDateTime.now());
+		noteChangeHistoryService.saveChange(newNote, "CREATE", user, LocalDateTime.now());
 
 		return dn.getId();
 	}
@@ -143,7 +142,7 @@ public class NoteService implements INoteService {
 				if (n.getPersonalizedNote() != null) {
 					color = n.getPersonalizedNote().getColor();
 				}
-				notesDto.add(new NoteSummaryDto(n.getTitle(), n.isImportant(), color));
+				notesDto.add(new NoteSummaryDto(n.getId(), n.getTitle(), n.isImportant(), color));
 			}
 			result.add(new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
 		}
@@ -170,7 +169,7 @@ public class NoteService implements INoteService {
 				if (n.getPersonalizedNote() != null) {
 					color = n.getPersonalizedNote().getColor();
 				}
-				notesDto.add(new NoteSummaryDto(n.getTitle(), n.isImportant(), color));
+				notesDto.add(new NoteSummaryDto(n.getId(), n.getTitle(), n.isImportant(), color));
 			}
 			result.add(new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
 		}
@@ -202,42 +201,41 @@ public class NoteService implements INoteService {
 	@Override
 	@Transactional
 	public boolean updateNote(NoteUpdateRequestDto dto) {
-	    // 1) Carica la nota
-	    Note note = noteRepository.findById(dto.getIdDateNote())
-	        .orElseThrow(() -> new EntityNotFoundException("Nota non trovata"));
 
-	    // 2) Controllo autorizzazione
-	    User current = authUtils.getLoggedUser();
-	    if (note.getUser() == null) {
-	        throw new AccessDeniedException("Non puoi modificare questa nota");
-	    }
+		Note note = noteRepository.findById(dto.getIdDateNote())
+				.orElseThrow(() -> new EntityNotFoundException("Nota non trovata"));
 
-	    // 3) Campi base
-	    if (dto.getTitle() != null) {
-	        note.setTitle(dto.getTitle());
-	    }
-	    if (dto.getDescription() != null) {
-	        note.setDescription(dto.getDescription());
-	    }
-	    if (dto.getIsImportant() != null) {
-	        note.setImportant(dto.getIsImportant());
-	    }	   
-	    note.setDateModification(LocalDateTime.now());
+		//
+		User current = authUtils.getLoggedUser();
+		if (note.getUser() == null) {
+			throw new AccessDeniedException("Non puoi modificare questa nota");
+		}
 
-	    // 4) PersonalizedNote: create or update
-	    PersonalizedNote p = note.getPersonalizedNote();
-	    if (p == null) {
-	        // prima non c’era: lo creiamo
-	        p = new PersonalizedNote();
-	        p.setNote(note);
-	        note.setPersonalizedNote(p);
-	    }
-	    if (dto.getColor() != null) {
-	        p.setColor(dto.getColor());
-	    }
-	    if (dto.getCustomMessage() != null) {
-	        p.setCustomMessage(dto.getCustomMessage());
-	    }
+		//
+		if (dto.getTitle() != null) {
+			note.setTitle(dto.getTitle());
+		}
+		if (dto.getDescription() != null) {
+			note.setDescription(dto.getDescription());
+		}
+		if (dto.getIsImportant() != null) {
+			note.setImportant(dto.getIsImportant());
+		}
+		note.setDateModification(LocalDateTime.now());
+
+		// PersonalizedNote: create or update
+		PersonalizedNote p = note.getPersonalizedNote();
+		if (p == null) {
+			p = new PersonalizedNote();
+			p.setNote(note);
+			note.setPersonalizedNote(p);
+		}
+		if (dto.getColor() != null) {
+			p.setColor(dto.getColor());
+		}
+		if (dto.getCustomMessage() != null) {
+			p.setCustomMessage(dto.getCustomMessage());
+		}
 
 		// — allegati
 		if (dto.getFiles() != null && dto.getFiles().length > 0) {
@@ -255,12 +253,11 @@ public class NoteService implements INoteService {
 			note.getFiles().addAll(uploaded);
 		}
 
-	    //Salvataggio e storico
-	    noteRepository.save(note);
-	    changeHistoryService.saveChange(note , "UPDATE", current, LocalDateTime.now());
-	    return true;
+		// Salvataggio e storico
+		noteRepository.save(note);
+		noteChangeHistoryService.saveChange(note, "UPDATE", current, LocalDateTime.now());
+		return true;
 	}
-
 
 	@Transactional
 	@Override
@@ -271,24 +268,22 @@ public class NoteService implements INoteService {
 			throw new AccessDeniedException("Non puoi modificare questa nota");
 		}
 
-		// Trova la nota tramite l'id e verifica che appartenga all'utente
 		Optional<Note> optionalNote = noteRepository.findById(id);
 
 		if (optionalNote.isEmpty()) {
-	        throw new AccessDeniedException("Non puoi eliminare questa nota");
+			throw new AccessDeniedException("Non puoi eliminare questa nota");
 		}
 
 		Note note = optionalNote.get();
 
-		// Verifica che la nota appartenga all'utente loggato
 		if (note.getUser().getId() != user.getId()) {
-	        throw new AccessDeniedException("Non puoi eliminare questa nota non autorizzato");
+			throw new AccessDeniedException("Non puoi eliminare questa nota non autorizzato");
 		}
 		noteRepository.delete(note);
 
 		noteRepository.flush();
 
-		changeHistoryService.saveChange(note, "DELETE", user, LocalDateTime.now());
+		noteChangeHistoryService.saveChange(note, "DELETE", user, LocalDateTime.now());
 
 		return true;
 	}
@@ -297,20 +292,15 @@ public class NoteService implements INoteService {
 	public boolean hasImportantNotesThisWeek() {
 		Long userId = authUtils.getLoggedUserId();
 
-		// Ottieni la data di oggi
 		LocalDate today = LocalDate.now();
 
-		// Ottieni il primo giorno del mese corrente
 		LocalDate firstDayOfMonth = today.withDayOfMonth(1);
 
-		// Ottieni l'ultimo giorno del mese corrente
 		LocalDate lastDayOfMonth = today.withDayOfMonth(1).plusMonths(1).minusDays(1);
 
-		// Convertili in LocalDateTime (per includere anche l'ora)
-		LocalDateTime startDateTime = firstDayOfMonth.atStartOfDay(); // Primo giorno, inizio del giorno (00:00)
-		LocalDateTime endDateTime = lastDayOfMonth.atTime(23, 59, 59); // Ultimo giorno, fine del giorno (23:59:59)
+		LocalDateTime startDateTime = firstDayOfMonth.atStartOfDay();
+		LocalDateTime endDateTime = lastDayOfMonth.atTime(23, 59, 59);
 
-		// Query che cerca note importanti per l'utente tra startOfWeek e endOfWeek
 		List<Note> importantNotes = noteRepository.findByUserIdAndDateBetween(userId, startDateTime, endDateTime);
 
 		return !importantNotes.isEmpty();
@@ -323,20 +313,15 @@ public class NoteService implements INoteService {
 			throw new RuntimeException("Utente non autenticato");
 		}
 
-		// se anno = 0 → anno corrente
 		if (year == 0) {
 			year = LocalDate.now().getYear();
 		}
 
-		LocalDateTime start;
-		LocalDateTime end;
-
+		LocalDateTime start, end;
 		if (month == 0) {
-			// tutto l’anno
 			start = LocalDate.of(year, 1, 1).atStartOfDay();
 			end = LocalDate.of(year, 12, 31).atTime(23, 59, 59);
 		} else {
-			// solo il mese specificato
 			LocalDate firstOfMonth = LocalDate.of(year, month, 1);
 			start = firstOfMonth.atStartOfDay();
 			end = firstOfMonth.withDayOfMonth(firstOfMonth.lengthOfMonth()).atTime(23, 59, 59);
@@ -344,15 +329,16 @@ public class NoteService implements INoteService {
 
 		List<DateNote> days = dateNoteRepository.findArchivedByUserAndDateRange(userId, start, end);
 
-		// mappatura in DTO
 		List<DateNoteSummaryDto> result = new ArrayList<>();
 		for (DateNote dn : days) {
-			List<NoteSummaryDto> notesDto = new ArrayList<>();
-			for (Note n : dn.getNotes()) {
+			List<NoteSummaryDto> notesDto = dn.getNotes().stream().filter(Note::getIsArchived).map(n -> {
 				String color = n.getPersonalizedNote() != null ? n.getPersonalizedNote().getColor() : null;
-				notesDto.add(new NoteSummaryDto(n.getTitle(), n.isImportant(), color));
+				return new NoteSummaryDto(n.getId(), n.getTitle(), n.isImportant(), color);
+			}).collect(Collectors.toList());
+
+			if (!notesDto.isEmpty()) {
+				result.add(new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
 			}
-			result.add(new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
 		}
 
 		return result;
@@ -373,12 +359,16 @@ public class NoteService implements INoteService {
 
 		Note note = noteOptional.get();
 
-		note.setArchived(!note.getIsArchived());
+		boolean wasArchived = Boolean.TRUE.equals(note.getIsArchived());
+
+		note.setIsArchived(!wasArchived);
 
 		noteRepository.save(note);
 
-		changeHistoryService.saveChange(note, "ARCHIVED", user, LocalDateTime.now());
+		String changeType = wasArchived ? "UNARCHIVED" : "ARCHIVED";
+		noteChangeHistoryService.saveChange(note, changeType, user, LocalDateTime.now());
 
 		return true;
+
 	}
 }

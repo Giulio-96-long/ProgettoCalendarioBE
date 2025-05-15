@@ -2,7 +2,7 @@ package com.example.demo.service.Iservice;
 
 import com.example.demo.dto.noteDto.DateNoteDetailDto;
 
-public interface IDateNoteService {
+public interface DateNoteService {
 
 	DateNoteDetailDto getNotesByDateNoteId(long idDateNote);
 

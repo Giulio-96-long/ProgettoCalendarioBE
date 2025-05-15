@@ -8,7 +8,7 @@ import com.example.demo.dto.userDto.UserInfoResponseDto;
 import com.example.demo.dto.userDto.UserRequestDto;
 import com.example.demo.entity.User;
 
-public interface IUserService {
+public interface UserService {
 	
 	long newUser(UserRequestDto userRequestDto);
 	

@@ -10,27 +10,30 @@ import com.example.demo.entity.Note;
 import com.example.demo.entity.NoteChangeHistory;
 import com.example.demo.entity.User;
 import com.example.demo.repository.NoteChangeHistoryRepository;
-import com.example.demo.service.Iservice.IChangeHistoryService;
+import com.example.demo.service.Iservice.NoteChangeHistoryService;
+import com.example.demo.util.AuthUtils;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
 @Service
-public class NoteChangeHistoryService implements IChangeHistoryService {
+public class NoteChangeHistoryServiceImpl implements NoteChangeHistoryService {
 
 	private final NoteChangeHistoryRepository noteChangeHistoryRepository;
-	
+	private final AuthUtils authUtils;
 	@PersistenceContext
 	private EntityManager em;
 
-	public NoteChangeHistoryService(NoteChangeHistoryRepository noteChangeHistoryRepository) {
+	public NoteChangeHistoryServiceImpl(NoteChangeHistoryRepository noteChangeHistoryRepository, AuthUtils authUtils) {
 		this.noteChangeHistoryRepository = noteChangeHistoryRepository;
+		this.authUtils = authUtils;
 	}
 
 	@Override
@@ -51,7 +54,12 @@ public class NoteChangeHistoryService implements IChangeHistoryService {
 	
 	@Override
 	public Page<NoteChangeHistoryResponseDto> getAllAndFilter(NoteChangeHistoryFilterDto filter) {
-	    Sort sort = Sort.by(filter.getSortBy());
+		User admin = authUtils.getLoggedUser();
+        if (admin == null || !"ADMIN".equals(admin.getRole())) {
+            throw new AccessDeniedException("Non sei ADMIN");
+        }
+		
+		Sort sort = Sort.by(filter.getSortBy());
 	    sort = "desc".equalsIgnoreCase(filter.getOrder())
 	         ? sort.descending()
 	         : sort.ascending();
@@ -66,22 +74,21 @@ public class NoteChangeHistoryService implements IChangeHistoryService {
 	        || (filter.getModifiedBy() != null && !filter.getModifiedBy().isBlank())
 	        || (start != null && end != null);
 
-	    Page<NoteChangeHistory> pageEntity = hasAnyFilter
-	        ? noteChangeHistoryRepository.search(
-	            filter.getChangeType(), 
-	            filter.getModifiedBy(), 
-	            start, 
-	            end, 
-	            pageable)
-	        : noteChangeHistoryRepository.findAll(pageable);
+	    Page<NoteChangeHistory> pageEntity = noteChangeHistoryRepository.search(
+	    	    filter.getChangeType(),
+	    	    filter.getModifiedBy(),
+	    	    filter.getStartDate(),
+	    	    filter.getEndDate(),
+	    	    pageable
+	    	);
 
 	    return pageEntity.map(n -> {
 	        var dto = new NoteChangeHistoryResponseDto();
 	        dto.setId(n.getId());
 	        dto.setChangeType(n.getChangeType());
-	        dto.setNoteId(n.getNote() != null ? n.getNote().getId() : null);
+	        dto.setNote(n.getNote() != null ? n.getNote().getTitle() : null);
 	        dto.setModifiedBy(n.getModifiedBy() != null
-	                          ? n.getModifiedBy().getUsername()
+	                          ? n.getModifiedBy().getEmail()
 	                          : "-");
 	        dto.setModificationDate(n.getModificationDate());
 	        return dto;

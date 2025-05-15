@@ -9,26 +9,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.NoteChangeHistoryDto.NoteChangeHistoryFilterDto;
-import com.example.demo.service.Iservice.IChangeHistoryService;
-import com.example.demo.service.Iservice.IErrorLogService;
+import com.example.demo.service.Iservice.NoteChangeHistoryService;
+import com.example.demo.service.Iservice.ErrorLogService;
 
 @RestController
 @RequestMapping("/api/noteChangeHistory")
 public class NoteChangeHistoryController {
 
-	private final IErrorLogService logErrorService;
-	private final IChangeHistoryService changeHistoryService;
+	private final ErrorLogService logErrorService;
+	private final NoteChangeHistoryService noteChangeHistoryService;
 
-	public NoteChangeHistoryController(IErrorLogService logErrorService, IChangeHistoryService changeHistoryService) {
+	public NoteChangeHistoryController(ErrorLogService logErrorService, NoteChangeHistoryService noteChangeHistoryService) {
 		this.logErrorService = logErrorService;
-		this.changeHistoryService = changeHistoryService;
+		this.noteChangeHistoryService = noteChangeHistoryService;
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/search")
 	public ResponseEntity<?> filterErrors(@RequestBody NoteChangeHistoryFilterDto filter) {
 		try {
-			var response = changeHistoryService.getAllAndFilter(filter);
+			var response = noteChangeHistoryService.getAllAndFilter(filter);
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
 			logErrorService.logError("/api/NoteChangeHistory/search", e);

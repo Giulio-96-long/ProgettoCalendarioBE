@@ -19,17 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.fileDto.FileResponseDto;
-import com.example.demo.service.Iservice.IErrorLogService;
-import com.example.demo.service.Iservice.IFileService;
+import com.example.demo.service.Iservice.ErrorLogService;
+import com.example.demo.service.Iservice.FileService;
 
 @RestController
 @RequestMapping("/api/file")
 public class FileController {
 
-	private final IFileService fileService;
-	private final IErrorLogService errorLogService;
+	private final FileService fileService;
+	private final ErrorLogService errorLogService;
 
-	public FileController(IFileService fileService, IErrorLogService errorLogService) {
+	public FileController(FileService fileService, ErrorLogService errorLogService) {
 		this.fileService = fileService;
 		this.errorLogService = errorLogService;
 	}
