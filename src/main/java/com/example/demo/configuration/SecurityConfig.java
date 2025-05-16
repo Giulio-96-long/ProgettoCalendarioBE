@@ -22,7 +22,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.example.demo.OAuth2.CustomOAuth2UserService;
+import com.example.demo.OAuth2.OAuth2SuccessHandler;
 import com.example.demo.authenticationToken.JwtAuthenticationFilter;
+import com.example.demo.util.*;
 
 @Configuration
 @EnableWebSecurity
@@ -33,9 +36,14 @@ public class SecurityConfig {
 	
     @Autowired
     private UserDetailsService userDetailsService;
+    
+    @Autowired
+    private CustomOAuth2UserService oauth2UserService;
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http,
+    		JwtAuthenticationFilter jwtFilter,
+    		 OAuth2SuccessHandler successHandler) throws Exception {
         http
         .cors(Customizer.withDefaults())
         .csrf(csrf -> csrf.disable()) // Disabilita CSRF per testare da Postman o Swagger
@@ -46,20 +54,27 @@ public class SecurityConfig {
                 "/swagger-ui.html",
                 "/swagger-resources/**",
                 "/webjars/**",
-                "/api/auth/register",
-                "/api/auth/login"                
+                "/api/auth/register",             
+                "/api/auth/login" ,
+                "/oauth2/authorization/**"          
             ).permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .anyRequest().hasAnyRole("USER","ADMIN")
             )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);       
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+         // OAuth2 Login configuration
+            .oauth2Login(o -> o
+                    .userInfoEndpoint(u -> u.userService(oauth2UserService))
+                    .successHandler(successHandler)
+                );
+          
 
     return http.build();          
        
     }
 
     @Bean
-    PasswordEncoder passwordEncoder() {
+    static PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 

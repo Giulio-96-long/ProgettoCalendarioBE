@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.authenticationToken.JwtUtil;
@@ -19,6 +22,8 @@ import com.example.demo.dto.userDto.UserRequestDto;
 import com.example.demo.entity.User;
 import com.example.demo.service.UserServiceImpl;
 import com.example.demo.service.Iservice.ErrorLogService;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -93,5 +98,6 @@ public class AuthController {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Errore interno del server"));
         }
-    }
+    }    
+  
 }
