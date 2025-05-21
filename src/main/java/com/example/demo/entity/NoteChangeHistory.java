@@ -22,6 +22,8 @@ public class NoteChangeHistory {
     private User modifiedBy;
 
     private LocalDateTime modificationDate = LocalDateTime.now();
+    
+   
 
 	public Long getId() {
 		return id;
@@ -61,6 +63,8 @@ public class NoteChangeHistory {
 
 	public void setNote(Note note) {
 		this.note = note;
-	}		
+	}
+	
+	
 	
 }

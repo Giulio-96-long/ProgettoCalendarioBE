@@ -24,7 +24,6 @@ public class ErrorLogController {
 		this.logErrorService = logErrorService;
 	}
 
-	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/filter")
 	public ResponseEntity<?> filterErrors(@RequestBody ErrorLogFilterDto filter) {
 		try {
@@ -37,7 +36,6 @@ public class ErrorLogController {
 
 	}
 
-	@PreAuthorize("hasRole('ADMIN')")
 	@GetMapping("/{id}")
 	public ResponseEntity<?> getById(@PathVariable Long id) {
 		try {

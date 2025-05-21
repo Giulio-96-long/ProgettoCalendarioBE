@@ -52,7 +52,7 @@ public class Note {
     private boolean archived = false;
 
     @Column(nullable = false)
-    private boolean deleted = false;
+    private boolean deleted = false;   
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

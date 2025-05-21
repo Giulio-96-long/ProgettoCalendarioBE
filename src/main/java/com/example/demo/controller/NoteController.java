@@ -45,12 +45,11 @@ public class NoteController {
 			@RequestParam(value = "message", required = false) String message,
 			@RequestParam(value = "dateNoteId", required = false) Long dateNoteId,
 			@RequestParam(value = "dateNote", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateNote,
-			@RequestParam(value = "files", required = false) MultipartFile[] files,
-			@RequestParam(value = "pathFile", required = false) String pathFile) throws IOException {
+			@RequestParam(value = "files", required = false) MultipartFile[] files) throws IOException {
 		
 		try {
 			var response = noteService.newNote(title, description, isImportant != null ? isImportant : false, color,
-					message, dateNoteId, dateNote, files, pathFile);			
+					message, dateNoteId, dateNote, files);			
 			return ResponseEntity.ok(response);
 
 		} catch (Exception e) {

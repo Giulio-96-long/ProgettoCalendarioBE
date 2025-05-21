@@ -44,7 +44,7 @@ public class FileServiceImpl implements FileService {
 		Note note = noteOptional.get();
 		List<Attachment> newFiles = new ArrayList<>();
 
-		Attachment fileEntity = ConvertToFileBase64.convertToFileEntity(file, pathFile, note);
+		Attachment fileEntity = ConvertToFileBase64.convertToFileEntity(file, note);
 		newFiles.add(fileEntity);
 
 		if (note.getFiles() == null) {

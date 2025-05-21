@@ -10,7 +10,7 @@ import com.example.demo.entity.Note;
 
 public class ConvertToFileBase64{
 	
-	public static Attachment convertToFileEntity(MultipartFile multipartFile, String pathFile, Note note) throws IOException {
+	public static Attachment convertToFileEntity(MultipartFile multipartFile, Note note) throws IOException {
 	    Attachment file = new Attachment();
 	    file.setNome(multipartFile.getOriginalFilename());
 	    file.setBase64(Base64.getEncoder().encodeToString(multipartFile.getBytes()));

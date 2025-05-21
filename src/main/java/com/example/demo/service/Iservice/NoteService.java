@@ -13,7 +13,7 @@ import com.example.demo.dto.noteDto.NoteWithFilesDto;
 public interface NoteService {
 
 	long newNote(String title, String description, boolean isImportant, String color, String message, Long dateNoteId,
-			LocalDateTime eventDate, MultipartFile[] files, String pathFile) throws IOException;
+			LocalDateTime eventDate, MultipartFile[] files) throws IOException;
 
 	NoteWithFilesDto getNoteById(long id);
 

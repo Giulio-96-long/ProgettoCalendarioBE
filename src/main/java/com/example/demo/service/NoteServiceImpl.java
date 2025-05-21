@@ -60,7 +60,7 @@ public class NoteServiceImpl implements NoteService {
 
 	@Override
 	public long newNote(String title, String description, boolean isImportant, String color, String message,
-			Long dateNoteId, LocalDateTime dateNote, MultipartFile[] files, String pathFile)
+			Long dateNoteId, LocalDateTime dateNote, MultipartFile[] files)
 			throws java.io.IOException {
 
 		User user = authUtils.getLoggedUser();
@@ -100,7 +100,7 @@ public class NoteServiceImpl implements NoteService {
 			List<Attachment> fileEntities = new ArrayList<>();
 			for (MultipartFile multipartFile : files) {
 				try {
-					Attachment fileEntity = ConvertToFileBase64.convertToFileEntity(multipartFile, pathFile, newNote);
+					Attachment fileEntity = ConvertToFileBase64.convertToFileEntity(multipartFile, newNote);
 					fileEntity.setNote(newNote);
 					fileEntities.add(fileEntity);
 				} catch (Exception e) {
@@ -242,7 +242,7 @@ public class NoteServiceImpl implements NoteService {
 			var uploaded = new ArrayList<Attachment>();
 			for (var mf : dto.getFiles()) {
 				try {
-					var fe = ConvertToFileBase64.convertToFileEntity(mf, dto.getPathFile(), note);
+					var fe = ConvertToFileBase64.convertToFileEntity(mf, note);
 					fe.setNote(note);
 					uploaded.add(fe);
 				} catch (IOException e) {

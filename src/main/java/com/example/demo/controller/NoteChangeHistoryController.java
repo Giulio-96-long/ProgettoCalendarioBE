@@ -24,7 +24,6 @@ public class NoteChangeHistoryController {
 		this.noteChangeHistoryService = noteChangeHistoryService;
 	}
 
-	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/search")
 	public ResponseEntity<?> filterErrors(@RequestBody NoteChangeHistoryFilterDto filter) {
 		try {

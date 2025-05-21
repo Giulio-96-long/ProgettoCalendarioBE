@@ -1,11 +1,10 @@
 package com.example.demo.dto.userDto;
 
 public class UpdateUserRequestDto {
+	
 	private String username;
 	private String email;
 	private String lastname;
-	private String oldPassword;
-	private String newPassword;
 
 	public String getUsername() {
 		return username;
@@ -29,22 +28,6 @@ public class UpdateUserRequestDto {
 
 	public void setLastname(String lastname) {
 		this.lastname = lastname;
-	}
-
-	public String getOldPassword() {
-		return oldPassword;
-	}
-
-	public void setOldPassword(String oldPassword) {
-		this.oldPassword = oldPassword;
-	}
-
-	public String getNewPassword() {
-		return newPassword;
-	}
-
-	public void setNewPassword(String newPassword) {
-		this.newPassword = newPassword;
-	}
+	}	
 
 }

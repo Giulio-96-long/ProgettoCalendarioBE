@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class DateNoteDetailDto {
+	
 	private Long idDataNote;
+	
 	private LocalDateTime eventDate;
 	private List<NoteWithFilesDto> notes;
 

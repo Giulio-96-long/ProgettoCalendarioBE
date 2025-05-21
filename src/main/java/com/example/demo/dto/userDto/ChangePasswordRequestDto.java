@@ -1,10 +1,17 @@
 package com.example.demo.dto.userDto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class ChangePasswordRequestDto {
-	 private String currentPassword;
-	 private String newPassword;
-	 
-	 public ChangePasswordRequestDto(){}
+	
+	@NotBlank
+	private String currentPassword;
+	
+	@NotBlank
+	private String newPassword;
+
+	public ChangePasswordRequestDto() {
+	}
 
 	public String getCurrentPassword() {
 		return currentPassword;
@@ -21,6 +28,5 @@ public class ChangePasswordRequestDto {
 	public void setNewPassword(String newPassword) {
 		this.newPassword = newPassword;
 	}
-	 
-	 
+
 }

@@ -1,10 +1,12 @@
 package com.example.demo.dto.userDto;
 
+import jakarta.validation.constraints.NotBlank;
 
 public class UserRequestDto {	
 	
+	@NotBlank
 	private String email;
-	
+	@NotBlank
 	private String password;
 	
 	private String username;

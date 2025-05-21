@@ -17,12 +17,12 @@ public interface ErrorLogRepository extends JpaRepository<ErrorLog, Long> {
 			SELECT e
 			FROM ErrorLog e
 			LEFT JOIN e.user u
-			WHERE (:username IS NULL OR u.username LIKE %:username%)
+			WHERE (:email IS NULL OR u.email LIKE %:email%)
 			  AND (:endpoint IS NULL OR e.endpoint LIKE %:endpoint%)
 			  AND (:startDate IS NULL OR e.timestamp >= :startDate)
 			  AND (:endDate   IS NULL OR e.timestamp <= :endDate)
 			""")
-	Page<ErrorLog> searchLogs(@Param("username") String username, @Param("endpoint") String endpoint,
+	Page<ErrorLog> searchLogs(@Param("email") String username, @Param("endpoint") String endpoint,
 			@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
 
 	@Query("SELECT e FROM ErrorLog e")

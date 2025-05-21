@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,20 +40,7 @@ public class FeedbackController {
     
     }
 
-    @PostMapping("/{id}/reply")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> reply(@PathVariable Long id,
-                                         @RequestBody NewCommentRequestDto dto) {
-        try {
-        	boolean success = feedbackServiceImpl.adminReply(id, dto);
-            return ResponseEntity.ok(success);
-        } catch (Exception e) {
-			logErrorService.logError("feedback/reply", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
-		}
-    	
-    }
-
+   
     @PostMapping("/{id}/read")
     public ResponseEntity<?> markRead(@PathVariable Long id) {
     	try {
@@ -79,18 +65,7 @@ public class FeedbackController {
        
     }
 
-    @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getAll() {
-    	try {
-    		  List<FeedbackResponseDto> all = feedbackServiceImpl.getAllComments();
-    	        return ResponseEntity.ok(all);
-    	 } catch (Exception e) {
- 			logErrorService.logError("feedback/all", e);
- 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
- 		}
-      
-    }
+    
 
     @GetMapping("/my")
     public ResponseEntity<?> getMy() {
@@ -139,8 +114,8 @@ public class FeedbackController {
 	}
 }
 
-    
-    @PreAuthorize("hasRole('ADMIN')")
+    // ADMIN
+
     @GetMapping("/admin/reply/count")
     public ResponseEntity<?> getPendingRepliesForAdmin() {
     	try {
@@ -153,7 +128,7 @@ public class FeedbackController {
       
     }
     
-    @PreAuthorize("hasRole('ADMIN')")
+
     @GetMapping("/admin/all-with-replies")
     public ResponseEntity<?> getAllWithReplies() {
     	try {
@@ -166,7 +141,7 @@ public class FeedbackController {
       
     }
     
-    @PreAuthorize("hasRole('ADMIN')")
+
     @GetMapping("/admin/unread/count")
     public ResponseEntity<?> getAdminUnreadCount() {
     	try {
@@ -178,4 +153,30 @@ public class FeedbackController {
  		}
         
     }
+    
+    @PostMapping("/{id}/reply")    
+    public ResponseEntity<?> reply(@PathVariable Long id,
+                                         @RequestBody NewCommentRequestDto dto) {
+        try {
+        	boolean success = feedbackServiceImpl.adminReply(id, dto);
+            return ResponseEntity.ok(success);
+        } catch (Exception e) {
+			logErrorService.logError("feedback/reply", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+		}
+    	
+    }
+    
+    @GetMapping("/all")    
+    public ResponseEntity<?> getAll() {
+    	try {
+    		  List<FeedbackResponseDto> all = feedbackServiceImpl.getAllComments();
+    	        return ResponseEntity.ok(all);
+    	 } catch (Exception e) {
+ 			logErrorService.logError("feedback/all", e);
+ 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+ 		}
+      
+    }
+
 }
