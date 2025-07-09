@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
+	
     private final JwtUtil jwtUtil;
     private final UserServiceImpl userService;
 

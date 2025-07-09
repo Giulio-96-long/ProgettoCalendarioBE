@@ -37,27 +37,17 @@ public class FileController {
 	@PostMapping("/addFile/{noteId}")
 	public ResponseEntity<?> addFilesToNote(@PathVariable Long noteId, @RequestParam("files") MultipartFile file,
 			@RequestParam(required = false) String pathFile) throws IOException {
-		try {
+		
 			var response = fileService.newFile(noteId, file, pathFile);
-			return ResponseEntity.ok(response);
-
-		} catch (Exception e) {
-			errorLogService.logError("file/addFile", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
-		}
+			return ResponseEntity.ok(response);		
 
 	}
 
 	@DeleteMapping("/delete/{id}")
 	public ResponseEntity<?> deleteFile(@PathVariable Long id) {
-		try {
+	
 			boolean removed = fileService.removeFile(id);
-			return ResponseEntity.ok(removed);
-		} catch (Exception e) {
-			errorLogService.logError("file/delete", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
-		}
-
+			return ResponseEntity.ok(removed);		
 	}
 
 	@GetMapping("/download/{id}")

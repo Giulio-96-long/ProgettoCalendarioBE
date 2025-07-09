@@ -1,7 +1,5 @@
 package com.example.demo.authenticationToken;
 
-
-import com.example.demo.service.CustomUserDetailsService;
 import com.example.demo.service.Iservice.ErrorLogService;
 
 import io.jsonwebtoken.ExpiredJwtException;
@@ -15,7 +13,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;

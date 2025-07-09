@@ -12,22 +12,20 @@ import com.example.demo.entity.Note;
 
 @Repository
 public interface NoteRepository extends JpaRepository<Note, Long> {
-		
-	@Query("SELECT n FROM Note n "
-			+ "LEFT JOIN FETCH n.files "			
-			+ "WHERE n.id = :id "
-			+ "AND n.archived = false")
-	Note findNoteWithFilesById(@Param("id") Long id);
 
-	@Query("SELECT n FROM Note n "
-		     + "JOIN FETCH n.dateNote d "
-		     + "WHERE n.user.id = :userId "
-		     + "AND n.archived = false "
-		     + "AND n.isImportant = true "
-		     + "AND d.eventDate BETWEEN :startDate AND :endDate")
-		List<Note> findByUserIdAndDateBetween(
-		    @Param("userId") Long userId,
-		    @Param("startDate") LocalDateTime startDate,
-		    @Param("endDate") LocalDateTime endDate);
-		
+	
+	@Query("""
+			   SELECT n
+			     FROM Note n
+			LEFT JOIN FETCH n.files
+			    WHERE n.id = :noteId
+			 """)
+	Note findNoteWithFilesById(@Param("noteId") Long noteId);
+
+	@Query("SELECT n FROM Note n " + "JOIN FETCH n.dateNote d " + "WHERE n.user.id = :userId "
+			+ "AND n.archived = false " + "AND n.isImportant = true "
+			+ "AND d.eventDate BETWEEN :startDate AND :endDate")
+	List<Note> findByUserIdAndDateBetween(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate,
+			@Param("endDate") LocalDateTime endDate);
+
 }

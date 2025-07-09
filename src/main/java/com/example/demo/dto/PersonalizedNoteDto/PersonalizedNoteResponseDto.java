@@ -8,8 +8,10 @@ public class PersonalizedNoteResponseDto {
 
 	private String color;
 	private String customMessage;
+	
+	public PersonalizedNoteResponseDto(){}
 
-	public PersonalizedNoteResponseDto() {
+	public PersonalizedNoteResponseDto(String color, String customMessage) {
 	}
 
 	public PersonalizedNoteResponseDto(PersonalizedNote personalizedNote) {

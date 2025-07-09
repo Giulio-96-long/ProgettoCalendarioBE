@@ -7,23 +7,21 @@ import java.time.LocalDateTime;
 @Table(name = "note_change_history")
 public class NoteChangeHistory {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String changeType;
-    
-    @ManyToOne
-    @JoinColumn(name = "note_id")
-    private Note note;
-    
-    @ManyToOne
-    @JoinColumn(name = "modified_by")
-    private User modifiedBy;
+	private String changeType;
 
-    private LocalDateTime modificationDate = LocalDateTime.now();
-    
-   
+	@ManyToOne
+	@JoinColumn(name = "note_id")
+	private Note note;
+
+	@ManyToOne
+	@JoinColumn(name = "modified_by")
+	private User modifiedBy;
+
+	private LocalDateTime modificationDate = LocalDateTime.now();	
 
 	public Long getId() {
 		return id;
@@ -63,8 +61,6 @@ public class NoteChangeHistory {
 
 	public void setNote(Note note) {
 		this.note = note;
-	}
-	
-	
-	
+	}	
+
 }

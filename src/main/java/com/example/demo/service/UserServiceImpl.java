@@ -11,12 +11,15 @@ import com.example.demo.dto.userDto.PhotoResponseDto;
 import com.example.demo.dto.userDto.UpdateUserRequestDto;
 import com.example.demo.dto.userDto.UserInfoResponseDto;
 import com.example.demo.dto.userDto.UserRequestDto;
+import com.example.demo.dto.userDto.UserResponseDto;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.Iservice.ErrorLogService;
 import com.example.demo.service.Iservice.UserService;
 import com.example.demo.util.AuthUtils;
 
-import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,16 +31,19 @@ public class UserServiceImpl implements UserService {
 	private final PasswordEncoder passwordEncoder;
 	private final CustomUserDetailsService customUserDetailsService;
 	private final AuthUtils authUtils;
+	private final ErrorLogService errorLogService;
 
 	public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
-			CustomUserDetailsService customUserDetailsService, AuthUtils authUtils) {
+			CustomUserDetailsService customUserDetailsService, AuthUtils authUtils, ErrorLogService errorLogService) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.customUserDetailsService = customUserDetailsService;
 		this.authUtils = authUtils;
+		this.errorLogService = errorLogService;
 	}
 
 	@Override
+	@Transactional
 	public long newUser(UserRequestDto userRequestDto) {
 		User existingUser = userRepository.findByEmail(userRequestDto.getEmail());
 		if (existingUser != null)
@@ -76,6 +82,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional
 	public boolean changePassword(String currentPassword, String newPassword) {
 		String email = getCurrentUserEmail();
 		if (email == null)
@@ -104,7 +111,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	@Transactional(readOnly = true)
+	@Transactional
 	public UserInfoResponseDto getCurrentUserInfo() {
 		User user = authUtils.getLoggedUser();
 		byte[] photo = user.getPhoto();
@@ -114,11 +121,17 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public PhotoResponseDto uploadProfileImage(MultipartFile file) throws IOException {
+	@Transactional
+	public PhotoResponseDto uploadProfileImage(MultipartFile file) {
 		User user = authUtils.getLoggedUser();
 
-		user.setPhoto(file.getBytes());
-		user.setPhotoContentType(file.getContentType());
+		try {
+			user.setPhoto(file.getBytes());
+			user.setPhotoContentType(file.getContentType());
+		} catch (Exception e) {
+			errorLogService.logError("Errore upload Profile Image" + file.getName(), e);
+		}
+
 		userRepository.save(user);
 
 		byte[] img = user.getPhoto();
@@ -129,9 +142,10 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateCurrentUser(UpdateUserRequestDto dto) throws Exception {
+	@Transactional
+	public boolean updateCurrentUser(UpdateUserRequestDto dto) {
 		User user = authUtils.getLoggedUser();
-		
+
 		// Aggiorna i campi se diversi da null/empty
 		if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
 			user.setUsername(dto.getUsername());
@@ -144,6 +158,33 @@ public class UserServiceImpl implements UserService {
 		}
 
 		userRepository.save(user);
+
+		return true;
+	}
+
+	@Override
+	public List<UserResponseDto> getAllUsers() {
+		Long me = authUtils.getLoggedUserId();
+		if (me == null)
+			throw new RuntimeException("Utente non autenticato");
+
+		List<User> users = userRepository.findAllByRoleAndIdNot("USER", me);
+
+		return users.stream().map(u -> new UserResponseDto(u.getId(), u.getEmail(), u.getUsername()))
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public List<UserResponseDto> searchUsers(String query) {
+		Long me = authUtils.getLoggedUserId();
+		if (me == null) {
+			throw new RuntimeException("Utente non autenticato");
+		}
+		
+		return userRepository.searchUsersByEmailAndRole(query, "USER").stream()
+				.filter(u -> !u.getId().equals(me))
+				.map(u -> new UserResponseDto(u.getId(), u.getEmail(), u.getUsername()))
+				.collect(Collectors.toList());
 	}
 
 }

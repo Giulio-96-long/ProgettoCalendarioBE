@@ -9,11 +9,12 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.demo.dto.noteDto.DateNoteSummaryDto;
 import com.example.demo.dto.noteDto.NoteUpdateRequestDto;
 import com.example.demo.dto.noteDto.NoteWithFilesDto;
+import com.example.demo.dto.shareDto.ShareRequestDto;
 
 public interface NoteService {
 
 	long newNote(String title, String description, boolean isImportant, String color, String message, Long dateNoteId,
-			LocalDateTime eventDate, MultipartFile[] files) throws IOException;
+			LocalDateTime eventDate, MultipartFile[] files, List<ShareRequestDto> recipients) throws IOException;
 
 	NoteWithFilesDto getNoteById(long id);
 

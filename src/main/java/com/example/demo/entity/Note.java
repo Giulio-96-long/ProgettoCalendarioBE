@@ -67,9 +67,12 @@ public class Note {
     @OneToOne(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
     private PersonalizedNote personalizedNote;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "date_note_id", nullable = false)
     private DateNote dateNote;
+    
+    @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Share> shares = new ArrayList<>();
 
 	public DateNote getDateNote() {
 		return dateNote;
@@ -190,5 +193,14 @@ public class Note {
 	public void setIsArchived(boolean archived) {
 		this.archived = archived;
 	}
+
+	public List<Share> getShares() {
+		return shares;
+	}
+
+	public void setShares(List<Share> shares) {
+		this.shares = shares;
+	}
+	
 
 }

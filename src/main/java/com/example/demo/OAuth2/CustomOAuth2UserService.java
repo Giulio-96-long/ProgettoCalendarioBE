@@ -19,38 +19,34 @@ import com.example.demo.service.CustomUserDetailsService;
 
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+	
 	@Autowired
-    private UserRepository userRepository;                 
+	private UserRepository userRepository;
 
-	  
-	    @Autowired
-	    private PasswordEncoder passwordEncoder; 
-	    
-	    @Autowired
-	    private CustomUserDetailsService userDetailsService;
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
-	    @Override
-	    public OAuth2User loadUser(OAuth2UserRequest req) throws OAuth2AuthenticationException {
-	        OAuth2User oauth = super.loadUser(req);
-	        String email = oauth.getAttribute("email");
-	        
-	        // crea utente se non esiste
-	        if (!userRepository.existsByEmail(email)) {
-	            User u = new User();
-	            u.setEmail(email);
-	            u.setUsername(oauth.getAttribute("given_name"));
-	            u.setLastname(oauth.getAttribute("family_name"));
-	            u.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-	            u.setRole("USER");
-	            userRepository.save(u);
-	        }
-	        
-	        // carica i dettagli di Spring Security
-	        UserDetails ud = userDetailsService.loadUserByUsername(email);
-	        return new DefaultOAuth2User(
-	            ud.getAuthorities(),
-	            oauth.getAttributes(),
-	            "email"
-	        );
-	    }
+	@Autowired
+	private CustomUserDetailsService userDetailsService;
+
+	@Override
+	public OAuth2User loadUser(OAuth2UserRequest req) throws OAuth2AuthenticationException {
+		OAuth2User oauth = super.loadUser(req);
+		String email = oauth.getAttribute("email");
+
+		// crea utente se non esiste
+		if (!userRepository.existsByEmail(email)) {
+			User u = new User();
+			u.setEmail(email);
+			u.setUsername(oauth.getAttribute("given_name"));
+			u.setLastname(oauth.getAttribute("family_name"));
+			u.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+			u.setRole("USER");
+			userRepository.save(u);
+		}
+
+		// carica i dettagli di Spring Security
+		UserDetails ud = userDetailsService.loadUserByUsername(email);
+		return new DefaultOAuth2User(ud.getAuthorities(), oauth.getAttributes(), "email");
 	}
+}

@@ -1,97 +1,70 @@
 package com.example.demo.exception;
 
+
+import jakarta.persistence.EntityNotFoundException;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.ServletWebRequest;
-import org.springframework.web.context.request.WebRequest;
+import org.springframework.http.*;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.dto.logErrorDto.ErrorResponseDto;
 import com.example.demo.service.Iservice.ErrorLogService;
 
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private final ErrorLogService errorLogService;
+    @Autowired
+    private ErrorLogService errorLogService;
 
-    public GlobalExceptionHandler(ErrorLogService errorLogService) {
-        this.errorLogService = errorLogService;
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> notFound(EntityNotFoundException ex, HttpServletRequest req) {
+        return buildError(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), req.getRequestURI());
     }
 
-    public static class ApiError {
-        public LocalDateTime timestamp;
-        public int status;
-        public String error;
-        public String message;
-        public String path;
-        public ApiError(LocalDateTime t, int s, String e, String m, String p) {
-            this.timestamp = t;
-            this.status = s;
-            this.error = e; 
-            this.message = m;
-            this.path = p;
-        }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDto> badRequest(IllegalArgumentException ex, HttpServletRequest req) {
+        return buildError(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex.getMessage(), req.getRequestURI());
     }
 
-    private String extractPath(WebRequest request) {
-        return ((ServletWebRequest) request).getRequest().getRequestURI();
+    @ExceptionHandler({IOException.class})
+    public ResponseEntity<ErrorResponseDto> ioError(IOException ex, HttpServletRequest req) {
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "IO_ERROR", "Errore di I/O", req.getRequestURI());
     }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiError> onNotFound(ResourceNotFoundException ex, WebRequest req) {
-        String path = extractPath(req);
-        errorLogService.logError(path, ex);
-        ApiError body = new ApiError(LocalDateTime.now(),
-                                     HttpStatus.NOT_FOUND.value(),
-                                     "Not Found",
-                                     ex.getMessage(),
-                                     path);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
-    }
-
-    @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<ApiError> onDbError(DataAccessException ex, WebRequest req) {
-        String path = extractPath(req);
-        errorLogService.logError(path, ex);
-        ApiError body = new ApiError(LocalDateTime.now(),
-                                     HttpStatus.CONFLICT.value(),
-                                     "Database Error",
-                                     ex.getMessage(),
-                                     path);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> onValidation(MethodArgumentNotValidException ex, WebRequest req) {
-        String path = extractPath(req);
-        String errors = ex.getBindingResult().getFieldErrors().stream()
-                          .map(FieldError::getDefaultMessage)
-                          .collect(Collectors.joining("; "));
-        errorLogService.logError(path, ex);
-        ApiError body = new ApiError(LocalDateTime.now(),
-                                     HttpStatus.BAD_REQUEST.value(),
-                                     "Validation Failed",
-                                     errors,
-                                     path);
-        return ResponseEntity.badRequest().body(body);
+    @ExceptionHandler({AccessDeniedException.class})
+    public ResponseEntity<ErrorResponseDto> forbidden(AccessDeniedException ex, HttpServletRequest req) {
+        return buildError(HttpStatus.FORBIDDEN, "FORBIDDEN", "Accesso negato", req.getRequestURI());
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> onAll(Exception ex, WebRequest req) {
-        String path = extractPath(req);
-        errorLogService.logError(path, ex);
-        ApiError body = new ApiError(LocalDateTime.now(),
-                                     HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                                     "Internal Server Error",
-                                     ex.getMessage(),
-                                     path);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    public ResponseEntity<ErrorResponseDto> internalError(Exception ex, HttpServletRequest req) {
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Errore interno", req.getRequestURI());
+    }
+    
+    @ExceptionHandler({ DataAccessException.class, SQLException.class })
+    public ResponseEntity<ErrorResponseDto> handleDatabaseError(Exception ex, HttpServletRequest req) {
+        String code   = "DATABASE_ERROR";
+        String message = ex.getMessage();
+        if (ex instanceof ConstraintViolationException) {
+            code = "CONSTRAINT_VIOLATION";
+            message = "Violazione di vincolo sul database";
+        }
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, code, message, req.getRequestURI());
+    }
+
+    private ResponseEntity<ErrorResponseDto> buildError(HttpStatus status, String code, String message, String path) {      
+        errorLogService.logError(path, new RuntimeException(code + ": " + message));
+        ErrorResponseDto body = new ErrorResponseDto(
+            LocalDateTime.now(), status.value(), code, message, path
+        );
+        return ResponseEntity.status(status).body(body);
     }
 }

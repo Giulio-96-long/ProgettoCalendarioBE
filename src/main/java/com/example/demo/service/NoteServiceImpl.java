@@ -4,10 +4,14 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -19,13 +23,19 @@ import com.example.demo.dto.noteDto.DateNoteSummaryDto;
 import com.example.demo.dto.noteDto.NoteSummaryDto;
 import com.example.demo.dto.noteDto.NoteUpdateRequestDto;
 import com.example.demo.dto.noteDto.NoteWithFilesDto;
+import com.example.demo.dto.shareDto.ShareRequestDto;
+import com.example.demo.dto.userDto.UserResponseDto;
 import com.example.demo.entity.Attachment;
 import com.example.demo.entity.DateNote;
 import com.example.demo.entity.Note;
 import com.example.demo.entity.PersonalizedNote;
+import com.example.demo.entity.Share;
+import com.example.demo.entity.ShareMember;
 import com.example.demo.entity.User;
 import com.example.demo.repository.DateNoteRepository;
 import com.example.demo.repository.NoteRepository;
+import com.example.demo.repository.ShareMemberRepository;
+import com.example.demo.repository.ShareRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.Iservice.NoteChangeHistoryService;
 import com.example.demo.service.Iservice.ErrorLogService;
@@ -46,76 +56,123 @@ public class NoteServiceImpl implements NoteService {
 	private final ErrorLogService errorLogService;
 	private final DateNoteRepository dateNoteRepository;
 	private final NoteChangeHistoryService noteChangeHistoryService;
+	private final ShareRepository shareRepository;
+	private final ShareMemberRepository shareMemberRepository;
+	private final UserRepository userRepository;
+	private final ShareMemberRepository shareMemberRepo;
 
 	public NoteServiceImpl(NoteRepository noteRepository, UserRepository userRepository, AuthUtils authUtils,
 			DateNoteRepository dateNoteRepository, ErrorLogService errorLogService,
 			NoteChangeHistoryService noteChangeHistoryService, PersonalizedNoteService personalizedNoteService,
-			FileService fileService) {
+			FileService fileService, ShareRepository shareRepository, ShareMemberRepository shareMemberRepository,
+			ShareMemberRepository shareMemberRepo) {
 		this.noteRepository = noteRepository;
 		this.authUtils = authUtils;
 		this.errorLogService = errorLogService;
 		this.dateNoteRepository = dateNoteRepository;
 		this.noteChangeHistoryService = noteChangeHistoryService;
+		this.shareRepository = shareRepository;
+		this.shareMemberRepository = shareMemberRepository;
+		this.userRepository = userRepository;
+		this.shareMemberRepo = shareMemberRepo;
 	}
 
-	@Override
-	public long newNote(String title, String description, boolean isImportant, String color, String message,
-			Long dateNoteId, LocalDateTime dateNote, MultipartFile[] files)
-			throws java.io.IOException {
+    @Override
+    @Transactional
+    public long newNote(String title,
+                        String description,
+                        boolean isImportant,
+                        String color,
+                        String message,
+                        Long dateNoteId,
+                        LocalDateTime dateNote,
+                        MultipartFile[] files,
+                        List<ShareRequestDto> recipients) throws IOException {
 
-		User user = authUtils.getLoggedUser();
-		if (user == null) {
-			throw new RuntimeException("User not authenticated");
-		}
-		DateNote dn;
-		if (dateNoteId != null) {
-			dn = dateNoteRepository.findById(dateNoteId)
-					.orElseThrow(() -> new EntityNotFoundException("DateNote non trovato"));
-		} else {
-			if (dateNote == null) {
-				throw new IllegalArgumentException("Devi passare dateNote o dateNoteId");
-			}
-			dn = new DateNote();
-			dn.setEventDate(dateNote);
-			dateNoteRepository.save(dn);
-		}
+        User user = authUtils.getLoggedUser();
+        if (user == null) {
+            throw new RuntimeException("User not authenticated");
+        }
 
-		Note newNote = new Note();
-		newNote.setUser(user);
-		newNote.setTitle(title);
-		newNote.setDescription(description);
-		newNote.setImportant(isImportant);
-		newNote.setDateNote(dn);
-		dn.getNotes().add(newNote);
+        DateNote dn;
+        
+        if (dateNoteId != null) {
+            dn = dateNoteRepository.findById(dateNoteId)
+                    .orElseThrow(() -> new EntityNotFoundException("DateNote non trovato"));
+        } else {
+            Optional<DateNote> existing = dateNoteRepository.findFirstByEventDate(dateNote);
+            if (existing.isPresent()) {
+                dn = existing.get();
+            } else {
+                dn = new DateNote(dateNote);
+            }
+        }
 
-		if (StringUtils.hasText(color) && StringUtils.hasText(message)) {
-			PersonalizedNote personalizedNote = new PersonalizedNote();
-			personalizedNote.setCustomMessage(message);
-			personalizedNote.setColor(color);
-			personalizedNote.setNote(newNote);
-			newNote.setPersonalizedNote(personalizedNote);
-		}
+        Note newNote = new Note();
+        newNote.setUser(user);
+        newNote.setTitle(title);
+        newNote.setDescription(description);
+        newNote.setImportant(isImportant);
+        newNote.setDateNote(dn);
+        dn.getNotes().add(newNote);
 
-		if (files != null && files.length > 0) {
-			List<Attachment> fileEntities = new ArrayList<>();
-			for (MultipartFile multipartFile : files) {
-				try {
-					Attachment fileEntity = ConvertToFileBase64.convertToFileEntity(multipartFile, newNote);
-					fileEntity.setNote(newNote);
-					fileEntities.add(fileEntity);
-				} catch (Exception e) {
-					errorLogService.logError("note/searchByMonth", e);
-				}
-			}
-			newNote.setFiles(fileEntities);
-		}
+        if (StringUtils.hasText(color) && StringUtils.hasText(message)) {
+            PersonalizedNote pn = new PersonalizedNote();
+            pn.setColor(color);
+            pn.setCustomMessage(message);
+            pn.setNote(newNote);
+            newNote.setPersonalizedNote(pn);
+        }
 
-		noteRepository.save(newNote);
+        if (files != null && files.length > 0) {
+            for (MultipartFile mf : files) {
+                try {
+                    Attachment a = ConvertToFileBase64.convertToFileEntity(mf, newNote);
+                    a.setNote(newNote);
+                    newNote.getFiles().add(a);
+                } catch (IOException e) {
+                    errorLogService.logError("newNote: errore conversione file " + mf.getOriginalFilename(), e);
+                }
+            }
+        }
 
-		noteChangeHistoryService.saveChange(newNote, "CREATE", user, LocalDateTime.now());
+        noteRepository.save(newNote);
+        noteRepository.flush();
 
-		return dn.getId();
-	}
+        if (recipients != null && !recipients.isEmpty()) {
+            Share share = new Share();
+            share.setNote(newNote);
+            share.setSharedBy(user);
+
+            for (ShareRequestDto r : recipients) {
+                try {
+                    User dest = userRepository.findById(r.getUserId())
+                        .orElseThrow(() -> new EntityNotFoundException("User non trovato"));
+                    ShareMember m = new ShareMember(share, dest);
+                    share.getMembers().add(m);
+                 
+                    try {
+                        noteChangeHistoryService.saveChange(newNote,
+                            "SHARE with " + dest.getUsername(), user, LocalDateTime.now());
+                    } catch (Exception hx) {
+                        errorLogService.logError("newNote: save history SHARE", hx);
+                    }
+                } catch (EntityNotFoundException ex) {
+                    errorLogService.logError("newNote: share member", ex);
+                }
+            }
+           
+            shareRepository.save(share);
+        }
+      
+        try {
+            noteChangeHistoryService.saveChange(newNote, "CREATE", user, LocalDateTime.now());
+        } catch (Exception e) {
+            errorLogService.logError("newNote: save history CREATE", e);
+        }
+
+        return dn.getId();
+    }
 
 	@Override
 	public List<DateNoteSummaryDto> getNotesByMonth(int month, int year, String order) {
@@ -134,19 +191,34 @@ public class NoteServiceImpl implements NoteService {
 
 		List<DateNote> days = dateNoteRepository.findWithNotesAndPersonalized(userId, start, end);
 
-		List<DateNoteSummaryDto> result = new ArrayList<>();
+		List<Long> sharedNoteIds = shareMemberRepository.findNoteIdsSharedWithUser(userId, start, end);
+
+		List<Note> sharedNotes = sharedNoteIds.isEmpty() ? Collections.emptyList()
+				: noteRepository.findAllById(sharedNoteIds);
+
+		Map<LocalDate, DateNoteSummaryDto> map = new LinkedHashMap<>();
+
+		// Prima le mie note
 		for (DateNote dn : days) {
 			List<NoteSummaryDto> notesDto = new ArrayList<>();
 			for (Note n : dn.getNotes()) {
-				String color = null;
-				if (n.getPersonalizedNote() != null) {
-					color = n.getPersonalizedNote().getColor();
-				}
+				String color = (n.getPersonalizedNote() != null) ? n.getPersonalizedNote().getColor() : null;
 				notesDto.add(new NoteSummaryDto(n.getId(), n.getTitle(), n.isImportant(), color));
 			}
-			result.add(new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
+			map.put(dn.getEventDate().toLocalDate(), new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
 		}
-		return result;
+
+		// Poi le note condivise
+		for (Note n : sharedNotes) {
+			LocalDate day = n.getDateNote().getEventDate().toLocalDate();
+			DateNoteSummaryDto dto = map.computeIfAbsent(day, d -> new DateNoteSummaryDto(n.getDateNote().getId(),
+					n.getDateNote().getEventDate(), new ArrayList<>()));
+			String color = (n.getPersonalizedNote() != null) ? n.getPersonalizedNote().getColor() : null;
+			dto.getNotes().add(new NoteSummaryDto(n.getId(), n.getTitle(), n.isImportant(), color));
+		}
+
+		// Ritorno la lista ordinata per data
+		return new ArrayList<>(map.values());
 	}
 
 	@Override
@@ -178,24 +250,71 @@ public class NoteServiceImpl implements NoteService {
 
 	@Override
 	public NoteWithFilesDto getNoteById(long id) {
-		Note note = noteRepository.findNoteWithFilesById(id);
 
+		// Controllo utente autenticato
+		User currentUser = authUtils.getLoggedUser();
+		if (currentUser == null) {
+			throw new RuntimeException("User not authenticated");
+		}
+		Long userId = currentUser.getId();
+
+		// Carico la nota con allegati
+		Note note = noteRepository.findNoteWithFilesById(id);
 		if (note == null) {
 			throw new EntityNotFoundException("Nota non trovata con id: " + id);
 		}
 
-		List<FileResponseDto> fileDtos = new ArrayList<>();
-		for (Attachment file : note.getFiles()) {
-			fileDtos.add(new FileResponseDto(file.getId(), file.getNome(), file.getBase64()));
+		// Controllo permessi: o proprietario o condivisa e visibile
+		boolean isOwner = note.getUser().getId() == userId;
+		boolean isShared = shareMemberRepository.existsByShare_Note_IdAndUser_IdAndRemovedForMeFalse(note.getId(),
+				userId);
+
+		if (!isOwner && !isShared) {
+			throw new AccessDeniedException("Non hai accesso a questa nota");
 		}
 
-		PersonalizedNoteResponseDto personalizedDto = null;
-		if (note.getPersonalizedNote() != null) {
-			personalizedDto = new PersonalizedNoteResponseDto(note.getPersonalizedNote());
-		}
+		// Mappo gli allegati
+		List<FileResponseDto> fileDtos = note.getFiles().stream()
+				.map(f -> new FileResponseDto(f.getId(), f.getNome(), f.getBase64())).toList();
+
+		// Mappo la nota personalizzata
+		PersonalizedNoteResponseDto personalizedDto = note.getPersonalizedNote() != null
+				? new PersonalizedNoteResponseDto(note.getPersonalizedNote())
+				: null;
+		
+		 List<ShareMember> memberships = shareMemberRepository
+			        .findAllByShareNoteIdAndRemovedForMeFalseAndShareNoteArchivedFalse(id);
+
+			    // 1) A CHI ho condiviso io: io sono lo sharer (share.sharedBy)
+			    List<UserResponseDto> sharedTo = memberships.stream()
+			        .filter(sm -> sm.getShare().getSharedBy().getId() == userId)
+			        .map(sm -> {
+			            User recipient = sm.getUser();
+			            return new UserResponseDto(
+			                recipient.getId(),
+			                recipient.getEmail(),
+			                recipient.getUsername()
+			            );
+			        })
+			        .distinct()
+			        .toList();
+
+			    // 2) CHI mi ha condiviso: io sono il recipient (shareMember.user)
+			    List<UserResponseDto> sharedBy = memberships.stream()
+			        .filter(sm -> sm.getUser().getId() == userId)
+			        .map(sm -> {
+			            User sharer = sm.getShare().getSharedBy();
+			            return new UserResponseDto(
+			                sharer.getId(),
+			                sharer.getEmail(),
+			                sharer.getUsername()
+			            );
+			        })
+			        .distinct()
+			        .toList();
 
 		return new NoteWithFilesDto(note.getId(), note.getTitle(), note.getDescription(), note.isImportant(),
-				personalizedDto, fileDtos);
+				personalizedDto, fileDtos, sharedTo, sharedBy, isOwner);
 	}
 
 	@Override
@@ -211,7 +330,6 @@ public class NoteServiceImpl implements NoteService {
 			throw new AccessDeniedException("Non puoi modificare questa nota");
 		}
 
-		//
 		if (dto.getTitle() != null) {
 			note.setTitle(dto.getTitle());
 		}
@@ -251,11 +369,18 @@ public class NoteServiceImpl implements NoteService {
 			}
 
 			note.getFiles().addAll(uploaded);
-		}
+		}	
+		
 
 		// Salvataggio e storico
 		noteRepository.save(note);
-		noteChangeHistoryService.saveChange(note, "UPDATE", current, LocalDateTime.now());
+
+		try {
+			noteChangeHistoryService.saveChange(note, "UPDATE", current, LocalDateTime.now());
+		} catch (Exception e) {
+			errorLogService.logError("updateNote salvataggio noteChangeHistory", e);
+		}
+
 		return true;
 	}
 
@@ -283,7 +408,11 @@ public class NoteServiceImpl implements NoteService {
 
 		noteRepository.flush();
 
-		noteChangeHistoryService.saveChange(note, "DELETE", user, LocalDateTime.now());
+		try {
+			noteChangeHistoryService.saveChange(note, "DELETE", user, LocalDateTime.now());
+		} catch (Exception e) {
+			errorLogService.logError("delete nota: salvataggio noteChangeHistory", e);
+		}
 
 		return true;
 	}
@@ -345,6 +474,7 @@ public class NoteServiceImpl implements NoteService {
 	}
 
 	@Override
+	@Transactional
 	public Boolean addArchived(long idNote) {
 		User user = authUtils.getLoggedUser();
 		if (user == null) {
@@ -364,9 +494,6 @@ public class NoteServiceImpl implements NoteService {
 		note.setIsArchived(!wasArchived);
 
 		noteRepository.save(note);
-
-		String changeType = wasArchived ? "UNARCHIVED" : "ARCHIVED";
-		noteChangeHistoryService.saveChange(note, changeType, user, LocalDateTime.now());
 
 		return true;
 

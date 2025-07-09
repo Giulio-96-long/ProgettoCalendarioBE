@@ -42,7 +42,10 @@ public class ErrorLogServiceImpl implements ErrorLogService {
 		e.printStackTrace(new PrintWriter(sw));
 		log.setStackTrace(sw.toString()); 
 		log.setTimestamp(LocalDateTime.now());
-		log.setUser(authUtils.getLoggedUser());
+		Optional<User> maybeUser = authUtils.getLoggedUserOptional();
+		    String username = maybeUser
+		        .map(User::getEmail)
+		        .orElse("ANONIMO/SISTEMA");
 		errorLogRepository.save(log);
 	}
 

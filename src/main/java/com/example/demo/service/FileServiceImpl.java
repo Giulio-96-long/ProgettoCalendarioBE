@@ -16,6 +16,7 @@ import com.example.demo.entity.Note;
 import com.example.demo.repository.FileRepository;
 import com.example.demo.repository.NoteRepository;
 import com.example.demo.service.Iservice.NoteChangeHistoryService;
+import com.example.demo.service.Iservice.ErrorLogService;
 import com.example.demo.service.Iservice.FileService;
 import com.example.demo.util.ConvertToFileBase64;
 
@@ -25,12 +26,14 @@ public class FileServiceImpl implements FileService {
 	private final NoteRepository noteRepository;
 	private final FileRepository fileRepository;
 	private final NoteChangeHistoryService noteChangeHistoryService;
+	private final ErrorLogService errorLogService;
 
 	public FileServiceImpl(NoteRepository noteRepository, FileRepository fileRepository,
-			NoteChangeHistoryService noteChangeHistoryService) {
+			NoteChangeHistoryService noteChangeHistoryService, ErrorLogService errorLogService) {
 		this.noteRepository = noteRepository;
 		this.fileRepository = fileRepository;
 		this.noteChangeHistoryService = noteChangeHistoryService;
+		this.errorLogService = errorLogService;
 	}
 
 	@Override
@@ -43,12 +46,16 @@ public class FileServiceImpl implements FileService {
 
 		Note note = noteOptional.get();
 		List<Attachment> newFiles = new ArrayList<>();
+		try {
+			Attachment fileEntity = ConvertToFileBase64.convertToFileEntity(file, note);
+			newFiles.add(fileEntity);
 
-		Attachment fileEntity = ConvertToFileBase64.convertToFileEntity(file, note);
-		newFiles.add(fileEntity);
+			if (note.getFiles() == null) {
+				note.setFiles(new ArrayList<>());
+			}
 
-		if (note.getFiles() == null) {
-			note.setFiles(new ArrayList<>());
+		} catch (Exception e) {
+			errorLogService.logError("Errore durante l'inserimento del file" + file.getName(), e);
 		}
 
 		note.getFiles().addAll(newFiles);
@@ -78,7 +85,11 @@ public class FileServiceImpl implements FileService {
 
 		fileRepository.deleteById(id);
 
-		noteChangeHistoryService.saveChange(note, "Remove File", note.getUser(), LocalDateTime.now());
+		try {
+			noteChangeHistoryService.saveChange(note, "Remove File", note.getUser(), LocalDateTime.now());
+		} catch (Exception e) {
+			errorLogService.logError("Remove File della nota id = " + note.getId(), e);
+		}
 
 		return false;
 	}

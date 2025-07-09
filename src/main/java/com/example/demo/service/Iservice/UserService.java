@@ -1,11 +1,14 @@
 package com.example.demo.service.Iservice;
 
+import java.util.List;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.userDto.PhotoResponseDto;
 import com.example.demo.dto.userDto.UpdateUserRequestDto;
 import com.example.demo.dto.userDto.UserInfoResponseDto;
 import com.example.demo.dto.userDto.UserRequestDto;
+import com.example.demo.dto.userDto.UserResponseDto;
 import com.example.demo.entity.User;
 
 public interface UserService {
@@ -24,8 +27,12 @@ public interface UserService {
 
 	UserInfoResponseDto getCurrentUserInfo();
 
-	PhotoResponseDto uploadProfileImage(MultipartFile file) throws Exception;
+	PhotoResponseDto uploadProfileImage(MultipartFile file);
 
-	void updateCurrentUser(UpdateUserRequestDto dto) throws Exception;	
+	boolean updateCurrentUser(UpdateUserRequestDto dto);
+
+	List<UserResponseDto> getAllUsers();
+
+	List<UserResponseDto> searchUsers(String query);	
 	
 }

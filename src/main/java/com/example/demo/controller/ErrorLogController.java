@@ -1,8 +1,6 @@
 package com.example.demo.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,26 +24,17 @@ public class ErrorLogController {
 
 	@PostMapping("/filter")
 	public ResponseEntity<?> filterErrors(@RequestBody ErrorLogFilterDto filter) {
-		try {
-			var response = logErrorService.getAllError(filter);
-			return ResponseEntity.ok(response);
-		} catch (Exception e) {
-			logErrorService.logError("logError/filter", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
-		}
+
+		var response = logErrorService.getAllError(filter);
+		return ResponseEntity.ok(response);
 
 	}
 
 	@GetMapping("/{id}")
 	public ResponseEntity<?> getById(@PathVariable Long id) {
-		try {
-			LogErrorResponseDto dto = logErrorService.getErrorById(id);
-			return ResponseEntity.ok(dto);
-		} catch (Exception e) {
-			logErrorService.logError("logError/getbyId", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
-		}
 
+		LogErrorResponseDto dto = logErrorService.getErrorById(id);
+		return ResponseEntity.ok(dto);
 	}
 
 }

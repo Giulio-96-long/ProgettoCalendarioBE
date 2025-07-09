@@ -3,12 +3,16 @@ package com.example.demo.dto.fileDto;
 public class FileRequestDto {
 	
 	 private String nome;
-	 
-	 private String path;
-	 
+	
 	 private String base64;
 	 
 	 public FileRequestDto() {}
+	 
+	 public FileRequestDto(String nome, String base64) {
+		 this.nome = nome;
+		 this.base64 = base64;
+		 
+	 }
 
 	public String getNome() {
 		return nome;
@@ -18,14 +22,7 @@ public class FileRequestDto {
 		this.nome = nome;
 	}
 
-	public String getPath() {
-		return path;
-	}
-
-	public void setPath(String path) {
-		this.path = path;
-	}
-
+	
 	public String getBase64() {
 		return base64;
 	}

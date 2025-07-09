@@ -2,7 +2,11 @@ package com.example.demo.util;
 
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
+
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +21,8 @@ public class AuthUtils {
 
 	public String getLoggedUserEmail() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (authentication == null) {
+		if (authentication == null || !authentication.isAuthenticated()
+				|| authentication instanceof AnonymousAuthenticationToken) {
 			return null;
 		}
 
@@ -26,21 +31,26 @@ public class AuthUtils {
 			return ((UserDetails) principal).getUsername();
 		}
 		if (principal instanceof String) {
-			return (String) principal;
+			String name = (String) principal;
+			if ("anonymousUser".equals(name)) {
+				return null;
+			}
+			return name;
 		}
 		return null;
 	}
-
-	public User getLoggedUser() {
+	
+	public Optional<User> getLoggedUserOptional() {
 		String email = getLoggedUserEmail();
 		if (email == null) {
-			throw new UsernameNotFoundException("Nessun utente autenticato");
-		}		
-		User user = userRepository.findByEmail(email);
-		if (user == null) {
-			throw new UsernameNotFoundException("Utente non trovato: " + email);
+			return Optional.empty();
 		}
-		return user;
+		return Optional.ofNullable(userRepository.findByEmail(email));
+	}
+
+	
+	public User getLoggedUser() {
+		return getLoggedUserOptional().orElseThrow(() -> new UsernameNotFoundException("Nessun utente autenticato"));
 	}
 
 	public Long getLoggedUserId() {

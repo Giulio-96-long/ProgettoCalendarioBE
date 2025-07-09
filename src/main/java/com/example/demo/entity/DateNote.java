@@ -7,6 +7,7 @@ import java.util.List;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -27,7 +28,7 @@ public class DateNote {
     
     @OneToMany(
     	      mappedBy = "dateNote",
-    	      cascade = {},          
+    	      cascade = CascadeType.ALL,      
     	      orphanRemoval = false
     	    )
     private List<Note> notes = new ArrayList<>(); 
@@ -46,7 +47,10 @@ public class DateNote {
     }
     
     public DateNote() {}
-
+    
+    public DateNote(LocalDateTime dateNote) {
+        this.eventDate = dateNote;
+    }
     public void addNote(Note note) {
         this.notes.add(note);
     }
@@ -74,6 +78,6 @@ public class DateNote {
 	public void setEventDate(LocalDateTime eventDate) {
 		this.eventDate = eventDate;
 	}
-    
+	
     
 }

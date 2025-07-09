@@ -3,6 +3,7 @@ package com.example.demo.repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,9 +16,23 @@ import com.example.demo.entity.DateNote;
 @Repository
 public interface DateNoteRepository extends JpaRepository<DateNote, Long> {
 
+
+	@Query("""
+		      SELECT DISTINCT d
+		        FROM DateNote d
+		        JOIN FETCH d.notes n
+		       WHERE d.id       = :dateNoteId
+		         AND n.archived = false
+		    """)
+	DateNote findActiveByNoteId( @Param("dateNoteId") Long dateNoteId);	
+	
+	
 	List<DateNote> findByEventDate(LocalDate eventDate);
 
-	@Query("SELECT d FROM DateNote d " + "JOIN d.notes n " + "WHERE n.user.id = :userId " + "AND n.archived = false "
+	@Query("SELECT d FROM DateNote d " 
+			+ "JOIN d.notes n " 
+			+ "WHERE n.user.id = :userId " 
+			+ "AND n.archived = false "
 			+ "AND d.eventDate BETWEEN :startDate AND :endDate")
 	List<DateNote> findByUserIdAndDateRange(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate,
 			@Param("endDate") LocalDateTime endDate, Pageable pageable);
@@ -55,4 +70,7 @@ public interface DateNoteRepository extends JpaRepository<DateNote, Long> {
 			   AND n.user.id    = :userId
 			""")
 	DateNote findByIdAndUnarchivedNotes(@Param("dateNoteId") Long dateNoteId, @Param("userId") Long userId);
+
+
+	Optional<DateNote> findFirstByEventDate(LocalDateTime dateNote);
 }

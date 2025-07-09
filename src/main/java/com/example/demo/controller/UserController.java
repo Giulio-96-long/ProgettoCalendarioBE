@@ -1,8 +1,7 @@
 package com.example.demo.controller;
 
-import java.util.Map;
+import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,9 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.userDto.ChangePasswordRequestDto;
 import com.example.demo.dto.userDto.UpdateUserRequestDto;
+import com.example.demo.dto.userDto.UserResponseDto;
 import com.example.demo.service.Iservice.UserService;
-import com.example.demo.service.UserServiceImpl;
-import com.example.demo.service.Iservice.ErrorLogService;
 
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -26,70 +24,62 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequestMapping("/api/user")
 public class UserController {
 
-	private final ErrorLogService errorLogService;
 	private final UserService userService;
 
-	public UserController(UserService serviceUser, UserService userService, ErrorLogService errorLogService) {
-		this.errorLogService = errorLogService;
+	public UserController(UserService userService) {
 		this.userService = userService;
-
 	}
 
 	@GetMapping("/profile")
 	public ResponseEntity<?> whoAmI() {
-		try {
-			var user = userService.getCurrentUserInfo();
-			return ResponseEntity.ok(user);
-		} catch (Exception e) {
-			errorLogService.logError("User/me", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(Map.of("error", "Impossibile caricare il profilo"));
-		}
+
+		var user = userService.getCurrentUserInfo();
+		return ResponseEntity.ok(user);
+
 	}
 
 	@PostMapping("/getOrUpdatephoto")
 	public ResponseEntity<?> uploadMyPhoto(@RequestParam("file") MultipartFile file) {
-		try {
-			var response = userService.uploadProfileImage(file);
-			return ResponseEntity.ok(response);
-		} catch (Exception e) {
-			errorLogService.logError("User/me/photo", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-		}
+
+		var response = userService.uploadProfileImage(file);
+		return ResponseEntity.ok(response);
+
 	}
 
 	@PostMapping("/changePassword")
 	public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequestDto request) {
-		try {
-			boolean success = userService.changePassword(request.getCurrentPassword(), request.getNewPassword());
-			return ResponseEntity.ok(success);
-		} catch (Exception e) {
-			errorLogService.logError("User/changePassword", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
-		}
+
+		boolean success = userService.changePassword(request.getCurrentPassword(), request.getNewPassword());
+		return ResponseEntity.ok(success);
 
 	}
 
 	@PutMapping("/profile")
 	public ResponseEntity<?> updateMe(@RequestBody UpdateUserRequestDto dto) {
-		try {
-			userService.updateCurrentUser(dto);
-			return ResponseEntity.ok().build();
-		} catch (Exception e) {
-			errorLogService.logError("User/me PUT", e);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-		}
+
+		boolean success = userService.updateCurrentUser(dto);
+		return ResponseEntity.ok(success);
+
 	}
 
 	@DeleteMapping("/delete/{id}")
 	public ResponseEntity<?> deleteFile(@PathVariable Long id) {
-		try {
-			boolean removed = userService.removeUser(id);
-			return ResponseEntity.ok(removed);
-		} catch (Exception e) {
-			errorLogService.logError("User/changePassword", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
-		}
+
+		boolean removed = userService.removeUser(id);
+		return ResponseEntity.ok(removed);
+
+	}
+
+	@GetMapping("allUser")
+	public ResponseEntity<List<UserResponseDto>> getAllUsers() {
+		List<UserResponseDto> users = userService.getAllUsers();
+		return ResponseEntity.ok(users);
+	}
+
+	@GetMapping("/search")
+	public ResponseEntity<List<UserResponseDto>> searchUsers(@RequestParam("query") String query) {
+		List<UserResponseDto> results = userService.searchUsers(query);
+		return ResponseEntity.ok(results);
 	}
 
 }
