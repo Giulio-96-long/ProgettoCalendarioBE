@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,7 +50,7 @@ public class NoteController {
 			@RequestParam(value = "dateNote", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateNote,
 			@RequestParam(value = "files", required = false) MultipartFile[] files,
 			@RequestParam(value = "shareUserIds", required = false) List<Long> shareUserIds) throws IOException {
-
+		
 	
 		List<ShareRequestDto> recipients = new ArrayList<>();
 		if (shareUserIds != null) {

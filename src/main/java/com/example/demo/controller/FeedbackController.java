@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.dto.FeedbackDto.FeedbackResponseDto;
 import com.example.demo.dto.FeedbackDto.NewCommentRequestDto;
 import com.example.demo.service.FeedbackServiceImpl;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/feedback")
@@ -25,7 +28,7 @@ public class FeedbackController {
 	}
 
 	@PostMapping("/comment")
-	public ResponseEntity<?> postComment(@RequestBody NewCommentRequestDto dto) {
+	public ResponseEntity<?> postComment(@RequestBody @Valid NewCommentRequestDto dto, BindingResult result) {
 
 		boolean success = feedbackServiceImpl.userSendContact(dto);
 		return ResponseEntity.ok(success);
@@ -106,7 +109,7 @@ public class FeedbackController {
 	}
 
 	@PostMapping("/{id}/reply")
-	public ResponseEntity<?> reply(@PathVariable Long id, @RequestBody NewCommentRequestDto dto) {
+	public ResponseEntity<?> reply(@PathVariable Long id, @RequestBody @Valid NewCommentRequestDto dto, BindingResult result) {
 
 		boolean success = feedbackServiceImpl.adminReply(id, dto);
 		return ResponseEntity.ok(success);

@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.shareDto.ShareRequestDto;
 import com.example.demo.service.Iservice.ShareService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("api/share")
@@ -26,7 +29,8 @@ public class ShareController {
     @PostMapping("/{noteId}")
     public ResponseEntity<?> shareNote(
             @PathVariable Long noteId,
-            @RequestBody List<ShareRequestDto> recipients
+            @RequestBody @Valid List<ShareRequestDto> recipients,
+            BindingResult result
     ) {
         shareService.shareNote(noteId, recipients);
         return ResponseEntity.ok().build();

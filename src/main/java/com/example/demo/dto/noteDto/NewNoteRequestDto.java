@@ -5,10 +5,10 @@ import java.util.List;
 
 import com.example.demo.dto.fileDto.FileRequestDto;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 
 public class NewNoteRequestDto {
-	@NotNull
+	@NotBlank
 	private String title;
 	
 	private String description;	

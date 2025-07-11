@@ -1,10 +1,14 @@
 package com.example.demo.dto.fileDto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class FileRequestDto {
 	
-	 private String nome;
-	
-	 private String base64;
+    @NotBlank(message = "Il nome del file non può essere vuoto")
+    private String nome;
+
+    @NotBlank(message = "Il contenuto del file non può essere vuoto")
+    private String base64;
 	 
 	 public FileRequestDto() {}
 	 

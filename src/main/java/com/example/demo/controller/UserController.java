@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +18,8 @@ import com.example.demo.dto.userDto.ChangePasswordRequestDto;
 import com.example.demo.dto.userDto.UpdateUserRequestDto;
 import com.example.demo.dto.userDto.UserResponseDto;
 import com.example.demo.service.Iservice.UserService;
+
+import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -47,7 +50,7 @@ public class UserController {
 	}
 
 	@PostMapping("/changePassword")
-	public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequestDto request) {
+	public ResponseEntity<?> changePassword(@RequestBody @Valid ChangePasswordRequestDto request, BindingResult result) {
 
 		boolean success = userService.changePassword(request.getCurrentPassword(), request.getNewPassword());
 		return ResponseEntity.ok(success);
@@ -55,7 +58,7 @@ public class UserController {
 	}
 
 	@PutMapping("/profile")
-	public ResponseEntity<?> updateMe(@RequestBody UpdateUserRequestDto dto) {
+	public ResponseEntity<?> updateMe(@RequestBody @Valid UpdateUserRequestDto dto, BindingResult result) {
 
 		boolean success = userService.updateCurrentUser(dto);
 		return ResponseEntity.ok(success);

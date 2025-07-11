@@ -6,6 +6,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.authenticationToken.JwtUtil;
@@ -16,6 +17,8 @@ import com.example.demo.dto.userDto.UserRequestDto;
 import com.example.demo.entity.User;
 
 import com.example.demo.service.Iservice.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -33,7 +36,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/register")
-	public ResponseEntity<?> register(@RequestBody UserRequestDto dto) {
+	public ResponseEntity<?> register(@RequestBody @Valid UserRequestDto dto, BindingResult result) {
 
 		long id = serviceUser.newUser(dto);
 		UserRegisterResponseDto out = new UserRegisterResponseDto(id,
@@ -43,7 +46,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequest) {
+	public ResponseEntity<?> login(@RequestBody @Valid LoginRequestDto loginRequest, BindingResult result) {
 
 		// Autentico e ricevo Authentication
 		Authentication auth = authenticationManager.authenticate(

@@ -43,9 +43,7 @@ public class ErrorLogServiceImpl implements ErrorLogService {
 		log.setStackTrace(sw.toString()); 
 		log.setTimestamp(LocalDateTime.now());
 		Optional<User> maybeUser = authUtils.getLoggedUserOptional();
-		    String username = maybeUser
-		        .map(User::getEmail)
-		        .orElse("ANONIMO/SISTEMA");
+		maybeUser.ifPresent(log::setUser); 
 		errorLogRepository.save(log);
 	}
 

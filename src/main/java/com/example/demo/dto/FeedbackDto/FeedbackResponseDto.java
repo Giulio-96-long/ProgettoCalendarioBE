@@ -1,6 +1,7 @@
 package com.example.demo.dto.FeedbackDto;
 
 import java.time.LocalDateTime;
+import jakarta.validation.constraints.*;
 
 public class FeedbackResponseDto {
 	

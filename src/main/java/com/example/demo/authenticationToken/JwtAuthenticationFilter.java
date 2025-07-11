@@ -62,13 +62,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 res.setContentType("application/json");
                 res.getWriter().write("{\"error\":\"Token scaduto\"}");
-                errorLogService.logError(token, ex);
+                errorLogService.logError(req.getRequestURI(), ex); 
                 return;
             } catch (JwtException ex) {
                 res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 res.setContentType("application/json");
                 res.getWriter().write("{\"error\":\"Token non valido\"}");
-                errorLogService.logError(token, ex);
+                errorLogService.logError(req.getRequestURI(), ex);
                 return;
             }
         }
