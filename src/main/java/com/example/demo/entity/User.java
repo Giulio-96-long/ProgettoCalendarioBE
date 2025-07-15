@@ -17,8 +17,8 @@ import jakarta.validation.constraints.Size;
 
 @Entity
 @SQLRestriction("deleted = false")
-@SQLDelete(sql = "UPDATEuser SET deleted = true WHERE id = ?")
-@Table(name = "user")
+@SQLDelete(sql = "UPDATE users SET deleted = true WHERE id = ?")
+@Table(name = "users")
 public class User {
 	
 	@Id

@@ -29,7 +29,7 @@ public interface DateNoteRepository extends JpaRepository<DateNote, Long> {
 	
 	List<DateNote> findByEventDate(LocalDate eventDate);
 
-	@Query("SELECT d FROM DateNote d " 
+	@Query("SELECT DISTINCT d FROM DateNote d " 
 			+ "JOIN d.notes n " 
 			+ "WHERE n.user.id = :userId " 
 			+ "AND n.archived = false "

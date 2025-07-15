@@ -5,10 +5,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.dao.DataAccessException;
@@ -199,23 +201,36 @@ public class NoteServiceImpl implements NoteService {
 		Map<LocalDate, DateNoteSummaryDto> map = new LinkedHashMap<>();
 
 		// Prima le mie note
+		Set<Long> allSeenNoteIds = new HashSet<>();
+
+		// Prima le mie note
 		for (DateNote dn : days) {
-			List<NoteSummaryDto> notesDto = new ArrayList<>();
-			for (Note n : dn.getNotes()) {
-				String color = (n.getPersonalizedNote() != null) ? n.getPersonalizedNote().getColor() : null;
-				notesDto.add(new NoteSummaryDto(n.getId(), n.getTitle(), n.isImportant(), color));
-			}
-			map.put(dn.getEventDate().toLocalDate(), new DateNoteSummaryDto(dn.getId(), dn.getEventDate(), notesDto));
+		    List<NoteSummaryDto> notesDto = new ArrayList<>();
+		    for (Note n : dn.getNotes()) {
+		        if (allSeenNoteIds.contains(n.getId())) continue;
+		        allSeenNoteIds.add(n.getId());
+
+		        String color = (n.getPersonalizedNote() != null) ? n.getPersonalizedNote().getColor() : null;
+		        notesDto.add(new NoteSummaryDto(n.getId(), n.getTitle(), n.isImportant(), color));
+		    }
+		    map.put(dn.getEventDate().toLocalDate(), new DateNoteSummaryDto(
+		        dn.getId(), dn.getEventDate(), notesDto
+		    ));
 		}
 
-		// Poi le note condivise
+		// Poi le condivise
 		for (Note n : sharedNotes) {
-			LocalDate day = n.getDateNote().getEventDate().toLocalDate();
-			DateNoteSummaryDto dto = map.computeIfAbsent(day, d -> new DateNoteSummaryDto(n.getDateNote().getId(),
-					n.getDateNote().getEventDate(), new ArrayList<>()));
-			String color = (n.getPersonalizedNote() != null) ? n.getPersonalizedNote().getColor() : null;
-			dto.getNotes().add(new NoteSummaryDto(n.getId(), n.getTitle(), n.isImportant(), color));
+		    if (allSeenNoteIds.contains(n.getId())) continue;
+		    allSeenNoteIds.add(n.getId());
+
+		    LocalDate day = n.getDateNote().getEventDate().toLocalDate();
+		    DateNoteSummaryDto dto = map.computeIfAbsent(day, d ->
+		        new DateNoteSummaryDto(n.getDateNote().getId(), n.getDateNote().getEventDate(), new ArrayList<>()));
+
+		    String color = (n.getPersonalizedNote() != null) ? n.getPersonalizedNote().getColor() : null;
+		    dto.getNotes().add(new NoteSummaryDto(n.getId(), n.getTitle(), n.isImportant(), color));
 		}
+
 
 		// Ritorno la lista ordinata per data
 		return new ArrayList<>(map.values());

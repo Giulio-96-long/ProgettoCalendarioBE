@@ -38,7 +38,7 @@ public class ErrorLog {
 	@JoinColumn(name = "user_id", 
 	nullable = true, 
 	foreignKey = @ForeignKey(name = "fk_errorlog_user", 
-	foreignKeyDefinition = "FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE SET NULL"))
+	foreignKeyDefinition = "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL"))
 	private User user;
 
 	private LocalDateTime timestamp;
