@@ -59,7 +59,7 @@ public class JwtUtil {
                 .parseClaimsJws(token)         // Decodifica il token
                 .getBody();                    // Ottieni il corpo del JWT
 
-        return claims.getSubject();            // Restituisci l'email (o il subject)
+        return claims.getSubject();            // Restituisci l'email 
     }
     
     public boolean validateToken(String token) {

@@ -29,6 +29,9 @@ public class FeedbackController {
 
 	@PostMapping("/comment")
 	public ResponseEntity<?> postComment(@RequestBody @Valid NewCommentRequestDto dto, BindingResult result) {
+		if (result.hasErrors()) {
+			return ResponseEntity.badRequest().body("Dati non validi nel commento");
+		}
 
 		boolean success = feedbackServiceImpl.userSendContact(dto);
 		return ResponseEntity.ok(success);
@@ -110,6 +113,9 @@ public class FeedbackController {
 
 	@PostMapping("/{id}/reply")
 	public ResponseEntity<?> reply(@PathVariable Long id, @RequestBody @Valid NewCommentRequestDto dto, BindingResult result) {
+		if (result.hasErrors()) {
+        	return ResponseEntity.badRequest().body("Dati non validi nella risposta");
+   		}
 
 		boolean success = feedbackServiceImpl.adminReply(id, dto);
 		return ResponseEntity.ok(success);

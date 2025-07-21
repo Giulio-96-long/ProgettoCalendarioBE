@@ -32,6 +32,9 @@ public class ShareController {
             @RequestBody @Valid List<ShareRequestDto> recipients,
             BindingResult result
     ) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body("Lista destinatari non valida");
+        }
         shareService.shareNote(noteId, recipients);
         return ResponseEntity.ok().build();
     }

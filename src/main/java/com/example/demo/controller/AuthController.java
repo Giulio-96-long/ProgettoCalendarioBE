@@ -1,6 +1,9 @@
 package com.example.demo.controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,17 +40,23 @@ public class AuthController {
 
 	@PostMapping("/register")
 	public ResponseEntity<?> register(@RequestBody @Valid UserRequestDto dto, BindingResult result) {
-
-		long id = serviceUser.newUser(dto);
-		UserRegisterResponseDto out = new UserRegisterResponseDto(id,
-				id != 0 ? "Utente registrato con successo" : "Email già esistente");
-		return ResponseEntity.ok(out);
-
+	    if (result.hasErrors()) {
+	        return ResponseEntity.badRequest().body(Map.of("message", "Dati di registrazione non validi"));
+	    }
+	    long id = serviceUser.newUser(dto);
+	    if (id == 0) {
+	        return ResponseEntity.status(HttpStatus.CONFLICT)
+	                .body(Map.of("message", "Email già esistente"));
+	    }
+	    return ResponseEntity.ok(Map.of("id", id, "message", "Utente registrato con successo"));
 	}
 
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody @Valid LoginRequestDto loginRequest, BindingResult result) {
 
+		if (result.hasErrors()) {
+			return ResponseEntity.badRequest().body("Credenziali non valide");
+		}
 		// Autentico e ricevo Authentication
 		Authentication auth = authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
@@ -58,9 +67,9 @@ public class AuthController {
 		// Carico l’utente dal DB e controllo esistenza
 		User user = serviceUser.findByEmail(email);
 		if (user == null) {
-			// forza BadCredentials se non trovo l’utente
-			throw new BadCredentialsException("Credenziali non valide");
+		    throw new BadCredentialsException("Tentativo login fallito con email: " + loginRequest.getEmail());
 		}
+
 
 		// Genero il JWT e preparo il DTO
 		String token = jwtUtil.generateToken(email, user.getRole());

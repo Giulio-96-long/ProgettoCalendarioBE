@@ -1,98 +1,71 @@
 # ProgettoCalendario - Backend
 
-Backend del progetto **Calendario Settimanale** sviluppato in **Spring Boot 3.4.5**, con autenticazione tramite **JWT** e **OAuth2 (Google)**, e integrazione **MySQL**, **Swagger/OpenAPI**, **Spring Security**.
+Backend del progetto **Calendario Settimanale** sviluppato con **Spring Boot 3.4.5**, **MySQL**, **JWT**, **OAuth2 (Google)** e **Swagger/OpenAPI**.
 
 ---
 
 ## Funzionalità principali
 
-- Registrazione e Login utenti
-- Supporto login con Google (OAuth2)
-- CRUD per note settimanali con allegati e colori
-- Gestione feedback tra utenti/admin
-- Logging centralizzato degli errori
-- Autenticazione via JWT
+- Registrazione e login (con supporto Google)
+- Gestione settimanale di note con allegati/colori
+- Interscambio feedback tra utenti/admin
+- Sicurezza tramite JWT e OAuth2
 - API documentate con Swagger
 
 ---
 
-## Stack Tecnologico
+## Configurazione
 
-- Java 17
-- Spring Boot 3.4.5
-- Spring Security + JWT
-- Spring OAuth2 Client
-- Spring Data JPA (Hibernate)
-- MySQL
-- Maven
-- Swagger/OpenAPI
+1. Assicurati di avere MySQL attivo e un database chiamato `Calendar`:
+   ```sql
+   CREATE DATABASE Calendar;
+   ```
 
----
+2. Copia il file di configurazione di esempio:
+   ```bash
+   cp src/main/resources/application-local-example.properties src/main/resources/application-local.properties
+   ```
 
-## Struttura del progetto
+3. Modifica `application-local.properties` inserendo:
+   - le tue credenziali MySQL (`username`, `password`)
+   - un JWT secret
+   - (facoltativo) le credenziali Google OAuth2
 
-```
-src/main/java/com/example/demo/
-├── authenticationToken     # JWT token handling
-├── configuration           # Security & OAuth2 config
-├── controller              # REST Controllers
-├── dto                     # DTOs per le richieste e risposte
-├── entity                  # Entity JPA
-├── exception               # GlobalExceptionHandler
-├── repository              # Repository JPA
-├── service                 # Business logic
-├── util                    # Utilities varie
-└── ProgettoCalendarioApplication.java
+4. Dopo il **primo avvio**, commenta la riga:
+   ```properties
+   spring.sql.init.mode=always
+   ```
+   oppure impostala su `never`.
 
-src/main/resources/
-├── application.properties  # Configurazioni
-└── static / templates      # (se necessario)
-```
+   ---
 
----
+5. Il progetto è configurato per l'esecuzione **locale** con `application-local.properties`, ma supporta anche il **deploy su servizi cloud** come Azure o Heroku tramite `application-prod.properties`.
 
-## Configurazione `application.properties`
-
-```properties
-# MySQL
-spring.datasource.url=jdbc:mysql://127.0.0.1:3306/Calendar...
-spring.datasource.username=root
-spring.datasource.password=...
-
-# Hibernate
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-
-# JWT
-jwt.secret=mySuperMegaSecretKeyForHS512DontShareThis
-
-# CORS
-app.cors.allowed-origins=http://127.0.0.1:5501
-
-# OAuth2 - Google
-spring.security.oauth2.client.registration.google.client-id=...
-spring.security.oauth2.client.registration.google.client-secret=...
-```
+Per attivare il profilo `prod`:
+- Imposta la variabile d'ambiente:
+  ```bash
+  SPRING_PROFILES_ACTIVE=prod
+  ```
+- Configura i parametri come `${JDBC_DATABASE_URL}`, `${JWT_SECRET}`, ecc. nel servizio di deploy.
 
 ---
 
-## Esecuzione
+---
 
-Compila e avvia con:
+## Avvio del progetto
 
+Compila ed esegui con:
 ```bash
 mvn clean install
 mvn spring-boot:run
 ```
 
-L’applicazione sarà disponibile su:
-
+Backend disponibile su:
 ```
 http://localhost:8080
 ```
 
 Swagger UI:
-
 ```
 http://localhost:8080/swagger-ui.html
 ```
@@ -101,39 +74,16 @@ http://localhost:8080/swagger-ui.html
 
 ## Sicurezza
 
-- Autenticazione tramite Bearer Token (JWT)
-- Login via Google (OAuth2)
-- Tutti gli endpoint API privati richiedono token
+- Tutte le API private richiedono token JWT (`Authorization: Bearer <token>`)
+- Login possibile anche con account Google tramite OAuth2
 
 ---
 
-## Endpoints principali
+## Stack Tecnologico
 
-- `POST /api/auth/login`
-- `GET /api/notes`, `POST /api/notes/new`, ...
-- `GET /api/logError` (per admin)
-- `POST /api/feedback`, `GET /api/feedback`
-
----
-
-## Documentazione API
-
-Accessibile via Swagger UI una volta avviata l'app:
-
-```
-http://localhost:8080/swagger-ui.html
-```
+- Java 17 + Spring Boot 3.4.5
+- Spring Security + JWT + OAuth2
+- Spring Data JPA + MySQL
+- Maven + Swagger/OpenAPI
 
 ---
-
-## Features extra
-
-- Log automatico degli errori via `GlobalExceptionHandler`
-- Modulo feedback e commenti
-- Storage file con Multipart
-
----
-
-## Contributors
-
-- [Tuo nome o team]

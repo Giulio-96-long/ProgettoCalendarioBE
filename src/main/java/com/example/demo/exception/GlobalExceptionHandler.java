@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.dto.logErrorDto.ErrorResponseDto;
@@ -58,6 +59,16 @@ public class GlobalExceptionHandler {
             message = "Violazione di vincolo sul database";
         }
         return buildError(HttpStatus.INTERNAL_SERVER_ERROR, code, message, req.getRequestURI());
+    }
+    
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponseDto> badCredentials(BadCredentialsException ex, HttpServletRequest req) {
+        return buildError(
+            HttpStatus.UNAUTHORIZED,
+            "INVALID_CREDENTIALS",
+            "Email o password errati",
+            req.getRequestURI()
+        );
     }
 
     private ResponseEntity<ErrorResponseDto> buildError(HttpStatus status, String code, String message, String path) {      
