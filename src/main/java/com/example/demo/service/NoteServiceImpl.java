@@ -203,7 +203,6 @@ public class NoteServiceImpl implements NoteService {
 		// Prima le mie note
 		Set<Long> allSeenNoteIds = new HashSet<>();
 
-		// Prima le mie note
 		for (DateNote dn : days) {
 		    List<NoteSummaryDto> notesDto = new ArrayList<>();
 		    for (Note n : dn.getNotes()) {
@@ -300,7 +299,7 @@ public class NoteServiceImpl implements NoteService {
 		 List<ShareMember> memberships = shareMemberRepository
 			        .findAllByShareNoteIdAndRemovedForMeFalseAndShareNoteArchivedFalse(id);
 
-			    // 1) A CHI ho condiviso io: io sono lo sharer (share.sharedBy)
+			    // A CHI ho condiviso io: io sono lo sharer (share.sharedBy)
 			    List<UserResponseDto> sharedTo = memberships.stream()
 			        .filter(sm -> sm.getShare().getSharedBy().getId() == userId)
 			        .map(sm -> {
@@ -314,7 +313,7 @@ public class NoteServiceImpl implements NoteService {
 			        .distinct()
 			        .toList();
 
-			    // 2) CHI mi ha condiviso: io sono il recipient (shareMember.user)
+			    // CHI mi ha condiviso: io sono il recipient (shareMember.user)
 			    List<UserResponseDto> sharedBy = memberships.stream()
 			        .filter(sm -> sm.getUser().getId() == userId)
 			        .map(sm -> {
@@ -339,7 +338,6 @@ public class NoteServiceImpl implements NoteService {
 		Note note = noteRepository.findById(dto.getIdDateNote())
 				.orElseThrow(() -> new EntityNotFoundException("Nota non trovata"));
 
-		//
 		User current = authUtils.getLoggedUser();
 		if (note.getUser() == null) {
 			throw new AccessDeniedException("Non puoi modificare questa nota");

@@ -17,9 +17,6 @@ Backend del progetto **Calendario Settimanale** sviluppato con **Spring Boot 3.4
 ## Configurazione
 
 1. Assicurati di avere MySQL attivo e un database chiamato `Calendar`:
-   ```sql
-   CREATE DATABASE Calendar;
-   ```
 
 2. Copia il file di configurazione di esempio:
    ```bash
@@ -36,19 +33,6 @@ Backend del progetto **Calendario Settimanale** sviluppato con **Spring Boot 3.4
    spring.sql.init.mode=always
    ```
    oppure impostala su `never`.
-
-   ---
-
-5. Il progetto è configurato per l'esecuzione **locale** con `application-local.properties`, ma supporta anche il **deploy su servizi cloud** come Azure o Heroku tramite `application-prod.properties`.
-
-Per attivare il profilo `prod`:
-- Imposta la variabile d'ambiente:
-  ```bash
-  SPRING_PROFILES_ACTIVE=prod
-  ```
-- Configura i parametri come `${JDBC_DATABASE_URL}`, `${JWT_SECRET}`, ecc. nel servizio di deploy.
-
----
 
 ---
 

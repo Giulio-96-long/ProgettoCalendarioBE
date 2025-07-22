@@ -73,7 +73,7 @@ public class DateNoteServiceImpl implements DateNoteService {
 		        }
 
 			boolean isOwner = note.getUser().getId() == userId;
-			// membro della condivisione e visibile?
+			// membro della condivisione
 			boolean isShared = shareMemberRepository.existsByShare_Note_IdAndUser_IdAndRemovedForMeFalse(note.getId(),
 					userId);
 
@@ -93,7 +93,7 @@ public class DateNoteServiceImpl implements DateNoteService {
 			 List<ShareMember> memberships = shareMemberRepository
 				        .findAllByShareNoteIdAndRemovedForMeFalseAndShareNoteArchivedFalse(note.getId());
 
-				    // 1) A CHI ho condiviso io: io sono lo sharer (share.sharedBy)
+				    // A CHI ho condiviso io: io sono lo sharer (share.sharedBy)
 				    List<UserResponseDto> sharedTo = memberships.stream()
 				        .filter(sm -> sm.getShare().getSharedBy().getId() == userId)
 				        .map(sm -> {
@@ -107,7 +107,7 @@ public class DateNoteServiceImpl implements DateNoteService {
 				        .distinct()
 				        .toList();
 
-				    // 2) CHI mi ha condiviso: io sono il recipient (shareMember.user)
+				    // CHI mi ha condiviso: io sono il recipient (shareMember.user)
 				    List<UserResponseDto> sharedBy = memberships.stream()
 				        .filter(sm -> sm.getUser().getId() == userId)
 				        .map(sm -> {
@@ -121,7 +121,7 @@ public class DateNoteServiceImpl implements DateNoteService {
 				        .distinct()
 				        .toList();
 
-			// Aggiungi al DTO includendo il flag isOwner
+			// Aggiungo al DTO includendo il flag isOwner
 			noteDtos.add(new NoteWithFilesDto(note.getId(), note.getTitle(), note.getDescription(), note.isImportant(),
 					pdto, fileDtos, sharedTo, sharedBy, isOwner));
 		}
@@ -131,7 +131,6 @@ public class DateNoteServiceImpl implements DateNoteService {
 			throw new AccessDeniedException("Non hai accesso a nessuna nota di questa giornata");
 		}
 
-		// Ritorna il DTO di dettaglio del giorno
 		return new DateNoteDetailDto(dn.getId(), dn.getEventDate(), noteDtos);
 	}
 

@@ -111,8 +111,7 @@ public class NoteChangeHistoryServiceImpl implements NoteChangeHistoryService {
 
        
         Note note = history.getNote();              
-        
-        // Costruisco NoteWithFilesDto
+       
         NoteWithFilesDto noteDto = new NoteWithFilesDto();
         noteDto.setId(note.getId());
         noteDto.setTitle(note.getTitle());
